@@ -1,0 +1,846 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نظام إدارة المخزون</title>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Progress Bar for Loading Indicators -->
+    <div class="progress-bar progress-indeterminate">
+        <div class="progress-fill"></div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+        <!-- Left side (contains the logo) -->
+        <div class="topbar-left">
+            <img src="assets/img/logo.png" alt="شعار الكلية" class="logo" />
+        </div>
+        <!-- Right side (contains language switcher, user role selector and avatar) -->
+        <div class="topbar-right">
+            <div class="language-switcher">
+                <button id="langToggle" class="lang-btn" aria-label="Toggle language">
+                    <span class="current-lang">AR</span>
+                    <span class="lang-separator">/</span>
+                    <span>EN</span>
+                </button>
+            </div>
+            <div class="user-role-selector">
+                <select id="userRoleSelector">
+                    <option value="dean">صلاحية عميد الكلية</option>
+                    <option value="director">صلاحية مدير الكلية</option>
+                    <option value="storekeeper">صلاحية أمين المخزن</option>
+                    <option value="staff">صلاحية موظف المخازن</option>
+                </select>
+            </div>
+            <img src="assets/img/user-avatar.png" alt="صورة المستخدم" class="avatar" />
+        </div>
+    </header>
+
+    <!-- Main layout container: sidebar + content -->
+    <div class="layout">
+        <!-- Sidebar (Right-Aligned for RTL) -->
+        <aside class="sidebar">
+            <!-- Navigation Menu -->
+            <nav class="nav-menu">
+                <ul>
+                    <!-- Active menu item -->
+                    <li class="active">
+                        <a href="#">
+                            <div class="icon-wrapper">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <span>لوحة التحكم</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="operations">
+                            <div class="icon-wrapper">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <span>العمليات</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="inventory">
+                            <div class="icon-wrapper">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <span>المخزون</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="reports">
+                            <div class="icon-wrapper">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <span>التقارير</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="settings">
+                            <div class="icon-wrapper">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <span>الإعدادات</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" id="logout-link">
+                            <div class="icon-wrapper">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </div>
+                            <span>تسجيل الخروج</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main content area -->
+        <main class="main-content">
+            <!-- Dashboard Overview Section -->
+            <section id="dashboard-section" class="dashboard-container fade-in">
+                <h1 class="slide-in">لوحة التحكم - نظام إدارة مخزون الكلية</h1>
+
+                <!-- Dashboard Stats Cards -->
+                <div class="stats-container">
+                    <div class="stat-card direction-aware-card">
+                        <h3>المستديم</h3>
+                        <p class="stat-number">245</p>
+                        <p class="stat-label">صنف</p>
+                        <div class="direction-aware-overlay">
+                            <a href="#" class="view-details-btn">عرض التفاصيل</a>
+                        </div>
+                    </div>
+                    <div class="stat-card direction-aware-card">
+                        <h3>المستهلك</h3>
+                        <p class="stat-number">312</p>
+                        <p class="stat-label">صنف</p>
+                        <div class="direction-aware-overlay">
+                            <a href="#" class="view-details-btn">عرض التفاصيل</a>
+                        </div>
+                    </div>
+                    <div class="stat-card direction-aware-card">
+                        <h3>التالف</h3>
+                        <p class="stat-number">58</p>
+                        <p class="stat-label">صنف</p>
+                        <div class="direction-aware-overlay">
+                            <a href="#" class="view-details-btn">عرض التفاصيل</a>
+                        </div>
+                    </div>
+                    <div class="stat-card direction-aware-card">
+                        <h3>إجمالي العناصر</h3>
+                        <p class="stat-number">615</p>
+                        <p class="stat-label">صنف</p>
+                        <div class="direction-aware-overlay">
+                            <a href="#" class="view-details-btn">عرض التفاصيل</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warehouse Operations Card -->
+                <div class="operations-card">
+                    <h2>العمليات السريعة</h2>
+                    <div class="operations-grid">
+                        <button class="operation-btn add-btn" data-operation="add">
+                            <div class="operation-icon">+</div>
+                            <span>الإضافة</span>
+                        </button>
+                        <button class="operation-btn withdraw-btn" data-operation="withdraw">
+                            <div class="operation-icon">-</div>
+                            <span>السحب</span>
+                        </button>
+                        <button class="operation-btn return-btn" data-operation="return">
+                            <div class="operation-icon">↩</div>
+                            <span>الإسترجاع</span>
+                        </button>
+                        <button class="operation-btn dispose-btn" data-operation="dispose">
+                            <div class="operation-icon">×</div>
+                            <span>الإتلاف</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activities Table -->
+                <div class="recent-activities">
+                    <h2>آخر العمليات</h2>
+                    <div class="table-container">
+                        <table class="activities-table">
+                            <thead>
+                                <tr>
+                                    <th>رقم العملية</th>
+                                    <th>نوع العملية</th>
+                                    <th>المخزن</th>
+                                    <th>الصنف</th>
+                                    <th>الكمية</th>
+                                    <th>التاريخ</th>
+                                    <th>بواسطة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1052</td>
+                                    <td>إضافة</td>
+                                    <td>المستهلك</td>
+                                    <td>ورق تصوير A4</td>
+                                    <td>25 رزمة</td>
+                                    <td>2025/04/09</td>
+                                    <td>أحمد حسن</td>
+                                </tr>
+                                <tr>
+                                    <td>1051</td>
+                                    <td>سحب</td>
+                                    <td>المستديم</td>
+                                    <td>جهاز حاسوب</td>
+                                    <td>2 جهاز</td>
+                                    <td>2025/04/08</td>
+                                    <td>محمد سعيد</td>
+                                </tr>
+                                <tr>
+                                    <td>1050</td>
+                                    <td>إسترجاع</td>
+                                    <td>المستهلك</td>
+                                    <td>حبر طابعة</td>
+                                    <td>5 عبوات</td>
+                                    <td>2025/04/07</td>
+                                    <td>عبد الله قاسم</td>
+                                </tr>
+                                <tr>
+                                    <td>1049</td>
+                                    <td>إتلاف</td>
+                                    <td>التالف</td>
+                                    <td>كراسي مكتب</td>
+                                    <td>8 كرسي</td>
+                                    <td>2025/04/07</td>
+                                    <td>سعيد كمال</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Operations Section (Initially Hidden) -->
+            <section id="operations-section" class="operations-container hidden">
+                <h1>العمليات المخزنية</h1>
+
+                <!-- Operation Type Selector -->
+                <div class="operation-selector">
+                    <h3>اختر نوع العملية</h3>
+                    <div class="operation-options">
+                        <button class="operation-option active" data-operation="add">الإضافة</button>
+                        <button class="operation-option" data-operation="withdraw">السحب</button>
+                        <button class="operation-option" data-operation="return">الإسترجاع</button>
+                        <button class="operation-option" data-operation="dispose">الإتلاف</button>
+                    </div>
+                </div>
+
+                <!-- Warehouse Selector -->
+                <div class="warehouse-selector">
+                    <h3>اختر المخزن</h3>
+                    <div class="warehouse-options">
+                        <button class="warehouse-option active" data-warehouse="durable">المستديم</button>
+                        <button class="warehouse-option" data-warehouse="consumable">المستهلك</button>
+                        <button class="warehouse-option" data-warehouse="damaged">التالف</button>
+                    </div>
+                </div>
+
+                <!-- Operation Form -->
+                <form id="inventoryOperationForm" class="inventory-form">
+                    <div class="operation-details">
+                        <div class="form-row">
+                            <label for="itemCode">رقم الصنف</label>
+                            <input type="text" id="itemCode" name="itemCode" placeholder="أدخل رقم الصنف" />
+                        </div>
+
+                        <div class="form-row">
+                            <label for="itemName">اسم الصنف</label>
+                            <input type="text" id="itemName" name="itemName" placeholder="أدخل اسم الصنف" />
+                        </div>
+
+                        <div class="form-row">
+                            <label for="itemQuantity">الكمية</label>
+                            <input type="number" id="itemQuantity" name="itemQuantity" placeholder="أدخل الكمية"
+                                min="1" />
+                        </div>
+
+                        <div class="form-row">
+                            <label for="itemUnit">وحدة القياس</label>
+                            <select id="itemUnit" name="itemUnit">
+                                <option value="piece">قطعة</option>
+                                <option value="box">صندوق</option>
+                                <option value="ream">رزمة</option>
+                                <option value="liter">لتر</option>
+                                <option value="kg">كيلوجرام</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="operationNotes">ملاحظات</label>
+                            <textarea id="operationNotes" name="operationNotes"
+                                placeholder="أدخل أي ملاحظات إضافية"></textarea>
+                        </div>
+
+                        <div class="form-row btn-container">
+                            <button type="submit" class="btn-primary">تنفيذ العملية</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Collapsible Operation History -->
+                <div class="accordion">
+                    <div class="accordion-header">
+                        <h3>سجل العمليات السابقة</h3>
+                        <div class="accordion-icon">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>رقم العملية</th>
+                                        <th>نوع العملية</th>
+                                        <th>الصنف</th>
+                                        <th>الكمية</th>
+                                        <th>المستلم / المورد</th>
+                                        <th>التاريخ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>OP-2025-412</td>
+                                        <td>إضافة</td>
+                                        <td>أوراق A4</td>
+                                        <td>50 رزمة</td>
+                                        <td>مكتبة المستقبل</td>
+                                        <td>2025/04/08</td>
+                                    </tr>
+                                    <tr>
+                                        <td>OP-2025-411</td>
+                                        <td>صرف</td>
+                                        <td>حبر طابعة</td>
+                                        <td>5 علب</td>
+                                        <td>قسم الحسابات</td>
+                                        <td>2025/04/07</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory Section (Initially Hidden) -->
+            <section id="inventory-section" class="inventory-list-container hidden">
+                <h1>المخزون الحالي</h1>
+
+                <!-- Warehouse Tab Selector -->
+                <div class="warehouse-tabs">
+                    <button class="warehouse-tab active" data-warehouse="durable">المستديم</button>
+                    <button class="warehouse-tab" data-warehouse="consumable">المستهلك</button>
+                    <button class="warehouse-tab" data-warehouse="damaged">التالف</button>
+                </div>
+
+                <!-- Search Box -->
+                <div class="inventory-search">
+                    <input type="text" id="inventorySearch" placeholder="بحث في المخزون..." />
+                </div>
+
+                <!-- Inventory Table -->
+                <div class="table-container">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>رقم الصنف</th>
+                                <th>اسم الصنف</th>
+                                <th>الكمية</th>
+                                <th>الوحدة</th>
+                                <th>تاريخ آخر تحديث</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body">
+                            <!-- Inventory data will be loaded here via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div class="loading-spinner" style="margin: 20px auto; display: none;"></div>
+            </section>
+
+            <!-- Reports Section (Initially Hidden) -->
+            <section id="reports-section" class="reports-container hidden">
+                <h1>التقارير</h1>
+
+                <!-- Advanced filter bar -->
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label for="report-type">نوع التقرير:</label>
+                        <select id="report-type">
+                            <option value="inventory-status">حالة المخزون</option>
+                            <option value="operations-summary">ملخص العمليات</option>
+                            <option value="item-movement">حركة الأصناف</option>
+                            <option value="low-stock">الأصناف منخفضة المخزون</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="report-warehouse">المخزن:</label>
+                        <select id="report-warehouse">
+                            <option value="all">جميع المخازن</option>
+                            <option value="durable">المستديم</option>
+                            <option value="consumable">المستهلك</option>
+                            <option value="damaged">التالف</option>
+                        </select>
+                    </div>
+                    <div class="filter-group date-range-picker">
+                        <label for="date-from">الفترة:</label>
+                        <input type="date" id="date-from">
+                        <span>إلى</span>
+                        <input type="date" id="date-to">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" id="generate-report" class="btn-primary">توليد التقرير</button>
+                        <button type="button" id="export-report" class="btn-secondary">تصدير PDF</button>
+                    </div>
+                </div>
+
+                <!-- Report content area -->
+                <div class="card report-card">
+                    <div class="card-header">
+                        <h2 id="report-title">حالة المخزون الحالي</h2>
+                        <span>تاريخ التقرير: <span id="report-date">${new
+                                Date().toLocaleDateString('ar-SA')}</span></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="report-chart"></canvas>
+                        </div>
+
+                        <div class="report-summary">
+                            <div class="summary-item">
+                                <h3>إجمالي الأصناف</h3>
+                                <p class="summary-value" id="total-items">615</p>
+                            </div>
+                            <div class="summary-item">
+                                <h3>القيمة التقديرية</h3>
+                                <p class="summary-value" id="estimated-value">850,000 ر.س</p>
+                            </div>
+                            <div class="summary-item">
+                                <h3>الأصناف منخفضة المخزون</h3>
+                                <p class="summary-value" id="low-stock-items">12</p>
+                            </div>
+                        </div>
+
+                        <!-- Detailed report table -->
+                        <div class="table-container">
+                            <table class="report-table">
+                                <thead id="report-table-head">
+                                    <tr>
+                                        <th>المخزن</th>
+                                        <th>عدد الأصناف</th>
+                                        <th>النسبة المئوية</th>
+                                        <th>آخر تحديث</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-table-body">
+                                    <tr>
+                                        <td>المستديم</td>
+                                        <td>245</td>
+                                        <td>39.8%</td>
+                                        <td>2025/04/09</td>
+                                    </tr>
+                                    <tr>
+                                        <td>المستهلك</td>
+                                        <td>312</td>
+                                        <td>50.7%</td>
+                                        <td>2025/04/09</td>
+                                    </tr>
+                                    <tr>
+                                        <td>التالف</td>
+                                        <td>58</td>
+                                        <td>9.5%</td>
+                                        <td>2025/04/07</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Operations Log Section (New) -->
+            <section id="logs-section" class="logs-container hidden">
+                <h1>سجل العمليات</h1>
+
+                <!-- Filter options -->
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label for="log-operation">نوع العملية:</label>
+                        <select id="log-operation">
+                            <option value="all">جميع العمليات</option>
+                            <option value="add">إضافة</option>
+                            <option value="withdraw">سحب</option>
+                            <option value="return">إسترجاع</option>
+                            <option value="dispose">إتلاف</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="log-warehouse">المخزن:</label>
+                        <select id="log-warehouse">
+                            <option value="all">جميع المخازن</option>
+                            <option value="durable">المستديم</option>
+                            <option value="consumable">المستهلك</option>
+                            <option value="damaged">التالف</option>
+                        </select>
+                    </div>
+                    <div class="filter-group date-range-picker">
+                        <label for="log-date-from">الفترة:</label>
+                        <input type="date" id="log-date-from">
+                        <span>إلى</span>
+                        <input type="date" id="log-date-to">
+                    </div>
+                    <div class="filter-group">
+                        <label for="log-search">بحث:</label>
+                        <input type="text" id="log-search" placeholder="بحث عن صنف أو رقم عملية...">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" id="apply-log-filters" class="btn-primary">تطبيق</button>
+                        <button type="button" id="reset-log-filters" class="btn-secondary">إعادة تعيين</button>
+                    </div>
+                </div>
+
+                <!-- Operations log table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="logs-table">
+                                <thead>
+                                    <tr>
+                                        <th>رقم العملية</th>
+                                        <th>نوع العملية</th>
+                                        <th>المخزن</th>
+                                        <th>الصنف</th>
+                                        <th>الكمية</th>
+                                        <th>التاريخ</th>
+                                        <th>بواسطة</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-table-body">
+                                    <!-- Log entries will be loaded here via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination controls -->
+                        <div class="pagination">
+                            <button class="page-btn" data-page="prev">السابق</button>
+                            <div class="page-numbers">
+                                <span class="current-page">1</span> / <span class="total-pages">5</span>
+                            </div>
+                            <button class="page-btn" data-page="next">التالي</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section (Initially Hidden) -->
+            <section id="settings-section" class="settings-container hidden">
+                <h1>إعدادات النظام</h1>
+                <div class="tab-navigation">
+                    <button class="active" data-tab="general">الإعدادات العامة</button>
+                    <button data-tab="users">إدارة المستخدمين</button>
+                    <button data-tab="warehouses">إدارة المخازن</button>
+                    <button data-tab="backup">النسخ الاحتياطي</button>
+                </div>
+
+                <div class="settings-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>الإعدادات العامة</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="generalSettingsForm" class="settings-form">
+                                <div class="form-row">
+                                    <label for="company-name">اسم المؤسسة</label>
+                                    <input type="text" id="company-name" value="كلية التقنية">
+                                </div>
+                                <div class="form-row">
+                                    <label for="default-language">اللغة الافتراضية</label>
+                                    <select id="default-language">
+                                        <option value="ar" selected>العربية</option>
+                                        <option value="en">الإنجليزية</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>الإشعارات</label>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked> تنبيهات انخفاض المخزون
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked> إشعارات العمليات الجديدة
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox"> تقارير أسبوعية
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-row btn-container">
+                                    <button type="submit" class="btn-primary">حفظ الإعدادات</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Footer area -->
+    <footer class="site-footer">
+        <p>© 2025 - نظام إدارة المخازن للكليات</p>
+        <p>College Warehouse Management System</p>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container"></div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Auth system first -->
+    <script src="auth.js"></script>
+
+    <!-- Link to external JS file -->
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if user is authenticated, redirect to login if not
+            if (!Auth.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Get current user data
+            const currentUser = Auth.getCurrentUser();
+
+            // Set up user profile display
+            updateUserProfileDisplay(currentUser);
+
+            // Apply permissions based on user role
+            applyUserPermissions(currentUser.role);
+
+            // Language/Direction switcher
+            document.getElementById('langToggle').addEventListener('click', function () {
+                const htmlElement = document.documentElement;
+                const isRtl = htmlElement.dir === 'rtl';
+
+                // Toggle direction
+                htmlElement.dir = isRtl ? 'ltr' : 'rtl';
+                htmlElement.lang = isRtl ? 'en' : 'ar';
+
+                // Update language display
+                const currentLangElement = this.querySelector('.current-lang');
+                currentLangElement.textContent = isRtl ? 'EN' : 'AR';
+
+                // Toggle classes if needed
+                document.body.classList.toggle('ltr-layout');
+                document.body.classList.toggle('rtl-layout');
+            });
+
+            // Handle logout
+            document.getElementById('logout-link').addEventListener('click', function (e) {
+                e.preventDefault();
+                showConfirmModal('تسجيل الخروج', 'هل أنت متأكد من رغبتك في تسجيل الخروج؟', () => {
+                    // Use Auth module to logout
+                    Auth.logout();
+
+                    // Show logout toast
+                    showToast('تم تسجيل الخروج بنجاح', 'info');
+
+                    // Redirect to login page after a short delay
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1000);
+                });
+            });
+
+            // Handle role selector changes
+            document.getElementById('userRoleSelector').addEventListener('change', function () {
+                const newRole = this.value;
+                applyUserPermissions(newRole);
+                showToast(`تم تغيير الصلاحيات إلى: ${getRoleDisplayName(newRole)}`, 'info');
+            });
+
+            // Update user profile display with current user data
+            function updateUserProfileDisplay(user) {
+                // Set role selector to match current user's role
+                document.getElementById('userRoleSelector').value = user.role;
+
+                // Set user name as avatar tooltip
+                const avatarElement = document.querySelector('.avatar');
+                if (avatarElement) {
+                    avatarElement.setAttribute('title', user.name);
+                }
+            }
+
+            // Show confirmation modal
+            function showConfirmModal(title, message, confirmCallback, cancelCallback) {
+                const content = `
+                    <p class="confirm-message">${message}</p>
+                    <div class="button-group">
+                        <button type="button" class="btn-secondary" id="modal-cancel">إلغاء</button>
+                        <button type="button" class="btn-primary" id="modal-confirm">تأكيد</button>
+                    </div>
+                `;
+
+                const modalContainer = document.createElement('div');
+                modalContainer.className = 'modal-container';
+                document.body.appendChild(modalContainer);
+
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>${title}</h3>
+                            <button type="button" class="modal-close" aria-label="إغلاق">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            ${content}
+                        </div>
+                    </div>
+                `;
+
+                modalContainer.appendChild(modal);
+
+                // Show modal
+                setTimeout(() => {
+                    modal.classList.add('show');
+                    const confirmBtn = document.getElementById('modal-confirm');
+                    if (confirmBtn) confirmBtn.focus();
+                }, 10);
+
+                // Close button
+                modal.querySelector('.modal-close').addEventListener('click', () => {
+                    closeModal(modal);
+                    if (cancelCallback) cancelCallback();
+                });
+
+                // Close on outside click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeModal(modal);
+                        if (cancelCallback) cancelCallback();
+                    }
+                });
+
+                // Confirm button
+                document.getElementById('modal-confirm').addEventListener('click', () => {
+                    closeModal(modal);
+                    if (confirmCallback) confirmCallback();
+                });
+
+                // Cancel button
+                document.getElementById('modal-cancel').addEventListener('click', () => {
+                    closeModal(modal);
+                    if (cancelCallback) cancelCallback();
+                });
+            }
+
+            // Close modal helper
+            function closeModal(modal) {
+                modal.classList.remove('show');
+                setTimeout(() => modal.remove(), 300);
+            }
+
+            // Show toast message
+            function showToast(message, type = 'info') {
+                const toastContainer = document.querySelector('.toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+
+                toastContainer.appendChild(toast);
+
+                // Show toast
+                setTimeout(() => toast.classList.add('show'), 10);
+
+                // Hide and remove toast
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            // Get display name for role
+            function getRoleDisplayName(role) {
+                const roleNames = {
+                    'dean': 'عميد الكلية',
+                    'director': 'مدير الكلية',
+                    'storekeeper': 'أمين المخزن',
+                    'staff': 'موظف المخازن'
+                };
+
+                return roleNames[role] || role;
+            }
+
+            // Apply permissions based on user role
+            function applyUserPermissions(role) {
+                // Define permissions for each role
+                const permissions = {
+                    dean: {
+                        canView: ['dashboard', 'operations', 'inventory', 'reports', 'settings'],
+                        canEdit: ['operations', 'settings']
+                    },
+                    director: {
+                        canView: ['dashboard', 'operations', 'inventory', 'reports'],
+                        canEdit: ['operations']
+                    },
+                    storekeeper: {
+                        canView: ['dashboard', 'operations', 'inventory', 'reports'],
+                        canEdit: ['operations', 'inventory']
+                    },
+                    staff: {
+                        canView: ['dashboard', 'operations', 'inventory'],
+                        canEdit: []
+                    }
+                };
+
+                // Apply view permissions to menu items
+                document.querySelectorAll('.nav-menu li a[data-section]').forEach(item => {
+                    const section = item.getAttribute('data-section');
+                    const canView = permissions[role].canView.includes(section);
+
+                    item.parentElement.style.display = canView ? 'block' : 'none';
+                });
+
+                // Apply edit permissions to action buttons
+                document.querySelectorAll('.btn-primary').forEach(btn => {
+                    const section = btn.closest('section').id.replace('-section', '');
+                    const canEdit = permissions[role].canEdit.includes(section);
+
+                    btn.disabled = !canEdit;
+                    btn.style.opacity = canEdit ? '1' : '0.5';
+                    btn.style.cursor = canEdit ? 'pointer' : 'not-allowed';
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
