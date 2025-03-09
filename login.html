@@ -1,583 +1,151 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - نظام إدارة المخازن</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f5f7fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        .login-container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 420px;
-            padding: 40px;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeIn 0.8s forwards;
-        }
-
-        .login-logo {
-            width: 120px;
-            height: auto;
-            margin-bottom: 20px;
-        }
-
-        .login-title {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 30px;
-            position: relative;
-        }
-
-        .login-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            right: 50%;
-            transform: translateX(50%);
-            width: 60px;
-            height: 3px;
-            background-color: #7f3ac2;
-            border-radius: 2px;
-        }
-
-        .login-form {
-            margin-top: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-            text-align: right;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .input-group {
-            position: relative;
-        }
-
-        .input-group i {
-            position: absolute;
-            top: 50%;
-            right: 15px;
-            transform: translateY(-50%);
-            color: #aaa;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 40px 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .form-control:focus {
-            border-color: #7f3ac2;
-            box-shadow: 0 0 0 3px rgba(127, 58, 194, 0.2);
-            outline: none;
-        }
-
-        .invalid-feedback {
-            color: #dc3545;
-            font-size: 14px;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .btn-login {
-            background-color: #7f3ac2;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            width: 100%;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-login:hover {
-            background-color: #6930a3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(127, 58, 194, 0.3);
-        }
-
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .role-select {
-            position: relative;
-        }
-
-        .role-options {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .role-option {
-            border: 2px solid #ddd;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-
-        .role-option i {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: #7f3ac2;
-        }
-
-        .role-option.selected {
-            border-color: #7f3ac2;
-            background-color: rgba(127, 58, 194, 0.05);
-        }
-
-        .role-option:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .role-input {
-            position: absolute;
-            opacity: 0;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            margin: 20px 0;
-        }
-
-        .remember-me input {
-            margin-left: 10px;
-        }
-
-        .forgot-password {
-            color: #7f3ac2;
-            text-decoration: none;
-            font-size: 14px;
-            margin-top: 15px;
-            display: inline-block;
-            transition: all 0.3s;
-        }
-
-        .forgot-password:hover {
-            color: #6930a3;
-            text-decoration: underline;
-        }
-
-        .language-toggle {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: none;
-            border: 1px solid #ddd;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #555;
-            transition: all 0.3s;
-        }
-
-        .language-toggle:hover {
-            background-color: #f5f5f5;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Loading spinner */
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        @keyframes spin {
-            to {
-                transform: translateY(-50%) rotate(360deg);
-            }
-        }
-
-        .btn-login.loading .spinner {
-            display: block;
-        }
-
-        .btn-login.loading {
-            padding-right: 40px;
-        }
-
-        /* Error shake animation */
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            10%,
-            30%,
-            50%,
-            70%,
-            90% {
-                transform: translateX(-5px);
-            }
-
-            20%,
-            40%,
-            60%,
-            80% {
-                transform: translateX(5px);
-            }
-        }
-
-        .shake {
-            animation: shake 0.6s;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
-
 <body class="login-page">
-    <button class="language-toggle" id="toggleLanguage">English / العربية</button>
-
     <div class="login-container">
-        <img src="https://via.placeholder.com/120" alt="شعار الكلية" class="login-logo">
-        <h1 class="login-title">نظام إدارة المخازن للكلية</h1>
-
-        <form class="login-form" id="loginForm">
-            <div class="form-group">
-                <label for="username">اسم المستخدم</label>
-                <div class="input-group">
-                    <input type="text" id="username" class="form-control" placeholder="أدخل اسم المستخدم" required>
-                    <i class="fas fa-user"></i>
+        <div class="login-card">
+            <div class="login-header">
+                <img src="assets/img/logo.png" alt="شعار نظام المخازن" class="login-logo">
+                <h1>نظام إدارة المخازن</h1>
+                <p>يرجى تسجيل الدخول للوصول إلى النظام</p>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-row">
+                    <label for="username">اسم المستخدم</label>
+                    <div class="input-group">
+                        <span class="input-icon">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" id="username" name="username" required>
+                    </div>
                 </div>
-                <div class="invalid-feedback">الرجاء إدخال اسم المستخدم</div>
-            </div>
-
-            <div class="form-group">
-                <label for="password">كلمة المرور</label>
-                <div class="input-group">
-                    <input type="password" id="password" class="form-control" placeholder="أدخل كلمة المرور" required>
-                    <i class="fas fa-lock"></i>
+                
+                <div class="form-row">
+                    <label for="password">كلمة المرور</label>
+                    <div class="input-group">
+                        <span class="input-icon">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" id="password" name="password" required>
+                        <span class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </span>
+                    </div>
                 </div>
-                <div class="invalid-feedback">الرجاء إدخال كلمة المرور</div>
-            </div>
 
-            <div class="form-group">
-                <label for="role">الصلاحية</label>
-                <div class="role-options">
-                    <label class="role-option" data-role="dean">
-                        <input type="radio" name="role" value="dean" class="role-input" required>
-                        <i class="fas fa-user-tie"></i>
-                        <span>عميد الكلية</span>
-                    </label>
-                    <label class="role-option" data-role="director">
-                        <input type="radio" name="role" value="director" class="role-input">
-                        <i class="fas fa-user-cog"></i>
-                        <span>مدير الكلية</span>
-                    </label>
-                    <label class="role-option" data-role="storekeeper">
-                        <input type="radio" name="role" value="storekeeper" class="role-input">
-                        <i class="fas fa-warehouse"></i>
-                        <span>أمين المخزن</span>
-                    </label>
-                    <label class="role-option" data-role="staff">
-                        <input type="radio" name="role" value="staff" class="role-input">
-                        <i class="fas fa-users"></i>
-                        <span>موظف المخازن</span>
-                    </label>
+                <div class="form-row">
+                    <label for="role">الصلاحية</label>
+                    <div class="input-group">
+                        <span class="input-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </span>
+                        <select id="role" name="role" required>
+                            <option value="" disabled selected>اختر الصلاحية</option>
+                            <option value="dean">عميد الكلية</option>
+                            <option value="director">مدير الكلية</option>
+                            <option value="storekeeper">أمين المخزن</option>
+                            <option value="staff">موظف المخازن</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="invalid-feedback">الرجاء اختيار الصلاحية</div>
-            </div>
+                
+                <div class="form-row remember-me">
+                    <label class="checkbox-container">
+                        تذكرني
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <span class="checkmark"></span>
+                    </label>
+                    <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <span>تسجيل الدخول</span>
+                    <i class="fas fa-sign-in-alt"></i>
+                </button>
 
-            <div class="remember-me">
-                <input type="checkbox" id="remember" checked>
-                <label for="remember">تذكرني</label>
-            </div>
-
-            <button type="submit" class="btn-login">
-                تسجيل الدخول
-                <div class="spinner"></div>
-            </button>
-
-            <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
-        </form>
+                <div class="error-message" id="loginError" style="display: none;"></div>
+            </form>
+        </div>
+        
+        <div class="login-footer">
+            <p>© 2025 نظام إدارة المخازن - جميع الحقوق محفوظة</p>
+        </div>
     </div>
 
-    <div class="toast-container"></div>
-
-    <!-- Load auth.js first -->
-    <script src="auth.js"></script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Redirect if already logged in
+    <!-- Import auth script directly -->
+    <script type="module">
+        import Auth from './js/auth/auth.js';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if user is already logged in
             if (Auth.isAuthenticated()) {
                 window.location.href = 'index.html';
-                return;
             }
-
-            // Role selection
-            const roleOptions = document.querySelectorAll('.role-option');
-            roleOptions.forEach(option => {
-                option.addEventListener('click', function () {
-                    roleOptions.forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                    this.querySelector('input').checked = true;
-                });
-            });
-
-            // Login form submission
+        
+            // Initialize and set up login form
             const loginForm = document.getElementById('loginForm');
             const usernameInput = document.getElementById('username');
             const passwordInput = document.getElementById('password');
-            const loginButton = document.querySelector('.btn-login');
-
-            loginForm.addEventListener('submit', function (e) {
+            const roleInput = document.getElementById('role');
+            const togglePasswordBtn = document.getElementById('togglePassword');
+            const loginError = document.getElementById('loginError');
+            
+            // Set focus to username input
+            usernameInput.focus();
+            
+            // Toggle password visibility
+            togglePasswordBtn.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                togglePasswordBtn.querySelector('i').classList.toggle('fa-eye');
+                togglePasswordBtn.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+            
+            // Handle form submission
+            loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-
-                // Reset validation state
-                const invalidFeedbacks = document.querySelectorAll('.invalid-feedback');
-                invalidFeedbacks.forEach(feedback => feedback.style.display = 'none');
-
-                let isValid = true;
-
-                // Validate username
-                if (!usernameInput.value.trim()) {
-                    document.querySelector('.form-group:nth-child(1) .invalid-feedback').style.display = 'block';
-                    usernameInput.classList.add('shake');
-                    setTimeout(() => usernameInput.classList.remove('shake'), 600);
-                    isValid = false;
+                
+                // Get form values
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value;
+                const role = roleInput.value;
+                
+                // Validate inputs
+                if (!username || !password || !role) {
+                    showLoginError('يرجى إدخال جميع البيانات المطلوبة');
+                    return;
                 }
-
-                // Validate password
-                if (!passwordInput.value.trim()) {
-                    document.querySelector('.form-group:nth-child(2) .invalid-feedback').style.display = 'block';
-                    passwordInput.classList.add('shake');
-                    setTimeout(() => passwordInput.classList.remove('shake'), 600);
-                    isValid = false;
-                }
-
-                // Validate role selection
-                const selectedRole = document.querySelector('input[name="role"]:checked');
-                if (!selectedRole) {
-                    document.querySelector('.form-group:nth-child(3) .invalid-feedback').style.display = 'block';
-                    document.querySelector('.role-options').classList.add('shake');
-                    setTimeout(() => document.querySelector('.role-options').classList.remove('shake'), 600);
-                    isValid = false;
-                }
-
-                if (isValid) {
-                    // Show loading state
-                    loginButton.classList.add('loading');
-                    loginButton.disabled = true;
-
-                    // Use our Auth module to authenticate
-                    setTimeout(() => {
-                        const username = usernameInput.value.trim();
-                        const password = passwordInput.value.trim();
-                        const role = selectedRole.value;
-
-                        // Call the authenticate method
-                        const authResult = Auth.authenticate(username, password, role);
-
-                        if (authResult.success) {
-                            // Show success message
-                            showToast(authResult.message, 'success');
-
-                            // Redirect to dashboard
-                            setTimeout(() => {
-                                window.location.href = 'index.html';
-                            }, 1000);
-                        } else {
-                            // Show error message
-                            showToast(authResult.message, 'error');
-                            loginButton.classList.remove('loading');
-                            loginButton.disabled = false;
-                            loginForm.classList.add('shake');
-                            setTimeout(() => loginForm.classList.remove('shake'), 600);
-                        }
-                    }, 1000);
+                
+                // Attempt to authenticate
+                const result = Auth.authenticate(username, password, role);
+                
+                if (result.success) {
+                    // Redirect to dashboard
+                    window.location.href = 'index.html';
+                } else {
+                    showLoginError(result.message);
                 }
             });
-
-            // Language toggle
-            document.getElementById('toggleLanguage').addEventListener('click', function () {
-                const htmlElement = document.documentElement;
-                const isRtl = htmlElement.dir === 'rtl';
-
-                htmlElement.dir = isRtl ? 'ltr' : 'rtl';
-                htmlElement.lang = isRtl ? 'en' : 'ar';
-
-                // Update button text
-                this.textContent = isRtl ? 'Arabic / الإنجليزية' : 'English / العربية';
-            });
-
-            // Handle forgot password
-            document.querySelector('.forgot-password').addEventListener('click', function (e) {
-                e.preventDefault();
-                showForgotPasswordForm();
-            });
-
-            // Helper function to show toast messages
-            function showToast(message, type = 'info') {
-                const toastContainer = document.querySelector('.toast-container');
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                toast.style.position = 'fixed';
-                toast.style.bottom = '20px';
-                toast.style.right = '20px';
-                toast.style.background = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
-                toast.style.color = 'white';
-                toast.style.padding = '12px 20px';
-                toast.style.borderRadius = '8px';
-                toast.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-                toast.style.zIndex = '9999';
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(20px)';
-                toast.style.transition = 'all 0.3s ease';
-
-                toast.textContent = message;
-                toastContainer.appendChild(toast);
-
+            
+            // Function to show login error
+            function showLoginError(message) {
+                loginError.textContent = message;
+                loginError.style.display = 'block';
+                
+                // Add shake animation to login form
+                loginForm.classList.add('shake');
                 setTimeout(() => {
-                    toast.style.opacity = '1';
-                    toast.style.transform = 'translateY(0)';
-                }, 10);
-
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    toast.style.transform = 'translateY(20px)';
-
-                    setTimeout(() => {
-                        toast.remove();
-                    }, 300);
-                }, 3000);
-            }
-
-            // Show forgot password form
-            function showForgotPasswordForm() {
-                const modalContent = `
-                    <form id="forgotPasswordForm" class="form-vertical">
-                        <p>أدخل اسم المستخدم الخاص بك وسيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.</p>
-                        <div class="form-row">
-                            <label for="forgotUsername">اسم المستخدم</label>
-                            <input type="text" id="forgotUsername" required>
-                        </div>
-                        <div class="form-row btn-container">
-                            <button type="submit" class="btn-primary">إرسال رابط إعادة التعيين</button>
-                        </div>
-                    </form>
-                `;
-
-                // Create modal element
-                const modalContainer = document.createElement('div');
-                modalContainer.className = 'modal-container';
-                document.body.appendChild(modalContainer);
-
-                const modal = document.createElement('div');
-                modal.className = 'modal';
-                modal.innerHTML = `
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>إعادة تعيين كلمة المرور</h3>
-                            <button type="button" class="modal-close" aria-label="إغلاق">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            ${modalContent}
-                        </div>
-                    </div>
-                `;
-
-                modalContainer.appendChild(modal);
-
-                // Show modal
-                setTimeout(() => {
-                    modal.classList.add('show');
-                    document.getElementById('forgotUsername').focus();
-                }, 10);
-
-                // Set up close button
-                modal.querySelector('.modal-close').addEventListener('click', () => {
-                    closeModal(modal);
-                });
-
-                // Close on click outside
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        closeModal(modal);
-                    }
-                });
-
-                // Handle form submission
-                const forgotForm = document.getElementById('forgotPasswordForm');
-                forgotForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-
-                    const username = document.getElementById('forgotUsername').value;
-
-                    // In a real app, this would send a password reset link
-                    showToast('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني', 'success');
-                    closeModal(modal);
-                });
-            }
-
-            // Close modal
-            function closeModal(modal) {
-                modal.classList.remove('show');
-                setTimeout(() => {
-                    modal.remove();
-                }, 300);
+                    loginForm.classList.remove('shake');
+                }, 500);
             }
         });
     </script>
 </body>
-
 </html>

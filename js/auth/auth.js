@@ -1,289 +1,229 @@
 /**
- * Authentication Module
- * Handles user authentication, authorization, and permissions
+ * Authentication System
+ * Provides authentication functionality for the warehouse management system.
  */
 
-import Toast from '../components/toast.js';
-
-// Define user roles and their permissions
-const ROLES = {
-    admin: {
-        name: 'مدير النظام',
-        permissions: ['viewInventory', 'editInventory', 'viewReports', 'manageUsers', 'accessSettings']
-    },
-    manager: {
-        name: 'مدير',
-        permissions: ['viewInventory', 'editInventory', 'viewReports', 'accessSettings']
-    },
-    employee: {
-        name: 'موظف',
-        permissions: ['viewInventory', 'editInventory']
-    },
-    viewer: {
-        name: 'مشاهد',
-        permissions: ['viewInventory', 'viewReports']
-    }
+// Mock user data - in a real application, this would be stored in a database
+const USERS = {
+    'admin': { password: 'admin123', name: 'المسؤول', role: 'dean' },
+    'director': { password: 'dir123', name: 'مدير الكلية', role: 'director' },
+    'store': { password: 'store123', name: 'خالد محمد', role: 'storekeeper' },
+    'staff': { password: 'staff123', name: 'أحمد علي', role: 'staff' }
 };
 
+// Session expiry time in milliseconds (8 hours)
+const SESSION_EXPIRY = 8 * 60 * 60 * 1000;
+
 /**
- * Authenticate a user by username and password
+ * Authenticate a user with username and password
  * @param {string} username - The username
  * @param {string} password - The password
- * @returns {Object} Authentication result
+ * @param {string} role - The selected role
+ * @returns {Object} Authentication result with status and user data if successful
  */
-function login(username, password) {
-    // In a real app, this would call an API endpoint
-    // For this demo, we'll use hardcoded users
-    const users = getUsers();
-    
-    // Find user by username
-    const user = users.find(u => u.username === username);
-    
-    // Check if user exists and password is correct
-    if (user && user.password === password) {
-        // Create user session
-        const userSession = {
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            role: user.role,
-            loginTime: new Date().toISOString()
-        };
-        
-        // Store user session in localStorage
-        localStorage.setItem('currentUser', JSON.stringify(userSession));
-        
-        return {
-            success: true,
-            message: 'تم تسجيل الدخول بنجاح'
-        };
+function authenticate(username, password, role) {
+    if (!username || !password || !role) {
+        return { success: false, message: 'يجب إدخال اسم المستخدم وكلمة المرور والصلاحية' };
     }
-    
+
+    const user = USERS[username];
+
+    if (!user) {
+        return { success: false, message: 'اسم المستخدم غير موجود' };
+    }
+
+    if (user.password !== password) {
+        return { success: false, message: 'كلمة المرور غير صحيحة' };
+    }
+
+    if (user.role !== role) {
+        return { success: false, message: 'الصلاحية المختارة غير مطابقة لحسابك' };
+    }
+
+    // Create session data
+    const sessionData = {
+        username: username,
+        name: user.name,
+        role: user.role,
+        isLoggedIn: true,
+        loginTime: new Date().toISOString(),
+        expiryTime: new Date(Date.now() + SESSION_EXPIRY).toISOString()
+    };
+
+    // Store session
+    saveSession(sessionData);
+
     return {
-        success: false,
-        message: 'اسم المستخدم أو كلمة المرور غير صحيحة'
+        success: true,
+        message: 'تم تسجيل الدخول بنجاح',
+        user: {
+            username: username,
+            name: user.name,
+            role: user.role
+        }
     };
 }
 
 /**
- * Log out the current user
+ * Check if a user session is valid
+ * @returns {boolean} Whether the user is authenticated
  */
-function logout() {
+function isAuthenticated() {
+    const session = getSession();
+
+    if (!session || !session.isLoggedIn) {
+        return false;
+    }
+
+    // Check if session has expired
+    const now = new Date();
+    const expiryTime = new Date(session.expiryTime);
+
+    if (now > expiryTime) {
+        // Session expired, clear it
+        clearSession();
+        return false;
+    }
+
+    // Session is valid, extend its expiry time
+    extendSession();
+    return true;
+}
+
+/**
+ * Save user session to localStorage
+ * @param {Object} sessionData - User session data
+ */
+function saveSession(sessionData) {
+    localStorage.setItem('currentUser', JSON.stringify(sessionData));
+}
+
+/**
+ * Get current user session from localStorage
+ * @returns {Object|null} The user session or null if not found
+ */
+function getSession() {
+    const sessionData = localStorage.getItem('currentUser');
+    return sessionData ? JSON.parse(sessionData) : null;
+}
+
+/**
+ * Clear user session from localStorage
+ */
+function clearSession() {
     localStorage.removeItem('currentUser');
 }
 
 /**
- * Check if a user is authenticated
- * @returns {boolean} Whether user is authenticated
+ * Extend the current session's expiry time
  */
-function isAuthenticated() {
-    const currentUser = getCurrentUser();
-    return !!currentUser;
-}
-
-/**
- * Check if user has a specific permission
- * @param {string} permission - The permission to check
- * @returns {boolean} Whether user has the permission
- */
-function hasPermission(permission) {
-    const currentUser = getCurrentUser();
-    
-    if (!currentUser || !currentUser.role) {
-        return false;
+function extendSession() {
+    const session = getSession();
+    if (session) {
+        session.expiryTime = new Date(Date.now() + SESSION_EXPIRY).toISOString();
+        saveSession(session);
     }
-    
-    const rolePermissions = ROLES[currentUser.role]?.permissions || [];
-    return rolePermissions.includes(permission);
 }
 
 /**
- * Get the current authenticated user
- * @returns {Object|null} Current user or null if not authenticated
+ * Log out the current user
+ * @returns {boolean} Whether logout was successful
+ */
+function logout() {
+    const wasLoggedIn = isAuthenticated();
+    clearSession();
+    return wasLoggedIn;
+}
+
+/**
+ * Get the current user's information
+ * @returns {Object|null} User information or null if not authenticated
  */
 function getCurrentUser() {
-    try {
-        const userJson = localStorage.getItem('currentUser');
-        return userJson ? JSON.parse(userJson) : null;
-    } catch (error) {
-        console.error('Error parsing user data:', error);
+    if (!isAuthenticated()) {
         return null;
     }
-}
 
-/**
- * Register a new user
- * @param {Object} userData - User data
- * @returns {Object} Registration result
- */
-function registerUser(userData) {
-    // In a real app, this would call an API endpoint
-    try {
-        const users = getUsers();
-        
-        // Check if username already exists
-        if (users.some(u => u.username === userData.username)) {
-            return {
-                success: false,
-                message: 'اسم المستخدم موجود بالفعل'
-            };
-        }
-        
-        // Create new user
-        const newUser = {
-            id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
-            username: userData.username,
-            password: userData.password,
-            name: userData.name,
-            role: userData.role || 'employee'
-        };
-        
-        // Add user to users array
-        users.push(newUser);
-        
-        // Save updated users
-        localStorage.setItem('users', JSON.stringify(users));
-        
-        return {
-            success: true,
-            message: 'تم إنشاء المستخدم بنجاح'
-        };
-    } catch (error) {
-        console.error('Error registering user:', error);
-        return {
-            success: false,
-            message: 'حدث خطأ أثناء إنشاء المستخدم'
-        };
-    }
+    const session = getSession();
+    return {
+        username: session.username,
+        name: session.name,
+        role: session.role,
+        loginTime: session.loginTime
+    };
 }
 
 /**
  * Change user password
  * @param {string} username - The username
- * @param {string} currentPassword - Current password
- * @param {string} newPassword - New password
- * @returns {Object} Password change result
+ * @param {string} currentPassword - The current password
+ * @param {string} newPassword - The new password
+ * @returns {Object} Result with success status and message
  */
 function changePassword(username, currentPassword, newPassword) {
-    try {
-        const users = getUsers();
-        
-        // Find user
-        const userIndex = users.findIndex(u => u.username === username);
-        
-        if (userIndex === -1) {
-            return {
-                success: false,
-                message: 'المستخدم غير موجود'
-            };
-        }
-        
-        // Check current password
-        if (users[userIndex].password !== currentPassword) {
-            return {
-                success: false,
-                message: 'كلمة المرور الحالية غير صحيحة'
-            };
-        }
-        
-        // Update password
-        users[userIndex].password = newPassword;
-        
-        // Save updated users
-        localStorage.setItem('users', JSON.stringify(users));
-        
-        return {
-            success: true,
-            message: 'تم تغيير كلمة المرور بنجاح'
-        };
-    } catch (error) {
-        console.error('Error changing password:', error);
-        return {
-            success: false,
-            message: 'حدث خطأ أثناء تغيير كلمة المرور'
-        };
+    if (!username || !currentPassword || !newPassword) {
+        return { success: false, message: 'جميع الحقول مطلوبة' };
     }
-}
 
-/**
- * Get all users
- * @returns {Array} Array of users
- */
-function getUsers() {
-    try {
-        const usersJson = localStorage.getItem('users');
-        
-        if (!usersJson) {
-            // Initialize with default users if none exist
-            const defaultUsers = [
-                {
-                    id: 1,
-                    username: 'admin',
-                    password: 'admin123',
-                    name: 'مدير النظام',
-                    role: 'admin'
-                },
-                {
-                    id: 2,
-                    username: 'manager',
-                    password: 'manager123',
-                    name: 'محمد المدير',
-                    role: 'manager'
-                },
-                {
-                    id: 3,
-                    username: 'employee',
-                    password: 'employee123',
-                    name: 'أحمد الموظف',
-                    role: 'employee'
-                }
-            ];
-            
-            localStorage.setItem('users', JSON.stringify(defaultUsers));
-            return defaultUsers;
-        }
-        
-        return JSON.parse(usersJson);
-    } catch (error) {
-        console.error('Error getting users:', error);
-        return [];
+    const user = USERS[username];
+
+    if (!user) {
+        return { success: false, message: 'المستخدم غير موجود' };
     }
+
+    if (user.password !== currentPassword) {
+        return { success: false, message: 'كلمة المرور الحالية غير صحيحة' };
+    }
+
+    // In a real app, this would update the password in a database
+    USERS[username].password = newPassword;
+
+    return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
 }
 
 /**
- * Get all available roles
- * @returns {Array} Array of roles with name and permissions
+ * Check if user has specific permission
+ * @param {string} permission - The permission to check
+ * @returns {boolean} Whether the user has the permission
  */
-function getRoles() {
-    return Object.entries(ROLES).map(([id, role]) => ({
-        id,
-        name: role.name,
-        permissions: role.permissions
-    }));
+function hasPermission(permission) {
+    if (!isAuthenticated()) {
+        return false;
+    }
+
+    const session = getSession();
+    const role = session.role;
+
+    // Define role-based permissions
+    const permissions = {
+        dean: ['viewDashboard', 'viewInventory', 'viewReports', 'viewSettings',
+            'editInventory', 'editSettings', 'approveRequests'],
+
+        director: ['viewDashboard', 'viewInventory', 'viewReports',
+            'editInventory', 'approveRequests'],
+
+        storekeeper: ['viewDashboard', 'viewInventory', 'viewReports',
+            'editInventory', 'createRequests'],
+
+        staff: ['viewDashboard', 'viewInventory', 'createRequests']
+    };
+
+    return permissions[role] && permissions[role].includes(permission);
 }
 
-/**
- * Get role display name
- * @param {string} roleId - Role ID
- * @returns {string} Role display name
- */
-function getRoleDisplayName(roleId) {
-    return ROLES[roleId]?.name || roleId;
-}
-
-// Export auth module
+// Export Auth module for use in other files
 const Auth = {
-    login,
-    logout,
+    authenticate,
     isAuthenticated,
-    hasPermission,
+    logout,
     getCurrentUser,
-    registerUser,
     changePassword,
-    getUsers,
-    getRoles,
-    getRoleDisplayName,
-    ROLES
+    hasPermission
 };
+
+// Support both older browsers and module imports
+if (typeof window !== 'undefined') {
+    window.Auth = Auth;
+}
 
 export default Auth;
