@@ -1,397 +1,267 @@
 /**
  * Settings Page Module
- * Handles functionality for application settings and preferences
+ * Handles functionality for the settings page
  */
 
-import Toast from '../components/toast.js';
 import Modal from '../components/modal.js';
-import I18n from '../utils/i18n.js';
-import FormValidator from '../utils/form-validator.js';
+import Toast from '../components/toast.js';
+import LocalStorageAPI from '../api/localStorage.js';
 
 /**
  * Initialize the settings page
  */
 function initialize() {
-    // Set up theme settings
-    setupThemeSettings();
+    // Setup tab navigation
+    setupTabNavigation();
     
-    // Set up language settings
-    setupLanguageSettings();
+    // Setup theme selector
+    setupThemeSelector();
     
-    // Set up notification settings
-    setupNotificationSettings();
-    
-    // Set up system settings
-    setupSystemSettings();
-    
-    // Set up data backup and restore
-    setupDataBackupRestore();
+    // Setup general settings form
+    setupGeneralSettings();
 }
 
 /**
- * Set up theme settings
+ * Set up tab navigation in settings
  */
-function setupThemeSettings() {
-    const themeSelector = document.getElementById('themeSelector');
+function setupTabNavigation() {
+    const tabButtons = document.querySelectorAll('.tab-navigation button');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            tabButtons.forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Show corresponding tab content
+            const tabName = button.getAttribute('data-tab');
+            showTabContent(tabName);
+        });
+    });
+}
+
+/**
+ * Show tab content based on tab name
+ * @param {string} tabName - The name of the tab to show
+ */
+function showTabContent(tabName) {
+    // Hide all forms first
+    const forms = document.querySelectorAll('.tab-content form');
+    forms.forEach(form => form.style.display = 'none');
+    
+    // Show the selected form
+    const selectedForm = document.getElementById(`${tabName}SettingsForm`);
+    if (selectedForm) {
+        selectedForm.style.display = 'block';
+    }
+}
+
+/**
+ * Set up theme selector
+ */
+function setupThemeSelector() {
+    const themeSelector = document.getElementById('theme-selector');
     
     if (themeSelector) {
-        // Set initial value from localStorage
+        // Set theme selector to match current theme
         const currentTheme = localStorage.getItem('theme') || 'light';
         themeSelector.value = currentTheme;
         
-        // Apply theme on change
+        // Add event listener for theme change
         themeSelector.addEventListener('change', () => {
             const selectedTheme = themeSelector.value;
-            applyTheme(selectedTheme);
-        });
-    }
-    
-    const fontSizeSelector = document.getElementById('fontSizeSelector');
-    
-    if (fontSizeSelector) {
-        // Set initial value from localStorage
-        const currentFontSize = localStorage.getItem('fontSize') || 'normal';
-        fontSizeSelector.value = currentFontSize;
-        
-        // Apply font size on change
-        fontSizeSelector.addEventListener('change', () => {
-            const selectedFontSize = fontSizeSelector.value;
-            applyFontSize(selectedFontSize);
+            changeTheme(selectedTheme);
         });
     }
 }
 
 /**
- * Apply selected theme
- * @param {string} theme - The theme name to apply
+ * Change application theme
+ * @param {string} theme - The theme to set
  */
-function applyTheme(theme) {
-    // Remove old theme classes
-    document.body.classList.remove('theme-light', 'theme-dark', 'theme-custom');
-    
-    // Add new theme class
-    document.body.classList.add(`theme-${theme}`);
-    
-    // Save theme setting to localStorage
+function changeTheme(theme) {
+    // Save theme preference
     localStorage.setItem('theme', theme);
     
-    Toast.showToast('تم تغيير سمة التطبيق بنجاح', 'success');
-}
-
-/**
- * Apply selected font size
- * @param {string} fontSize - The font size to apply
- */
-function applyFontSize(fontSize) {
-    // Remove old font size classes
-    document.body.classList.remove('font-small', 'font-normal', 'font-large');
-    
-    // Add new font size class
-    document.body.classList.add(`font-${fontSize}`);
-    
-    // Save font size setting to localStorage
-    localStorage.setItem('fontSize', fontSize);
-    
-    Toast.showToast('تم تغيير حجم الخط بنجاح', 'success');
-}
-
-/**
- * Set up language settings
- */
-function setupLanguageSettings() {
-    const languageSelector = document.getElementById('languageSelector');
-    
-    if (languageSelector) {
-        // Set initial value based on current HTML dir attribute
-        const currentDir = document.documentElement.getAttribute('dir') || 'rtl';
-        languageSelector.value = currentDir === 'rtl' ? 'ar' : 'en';
-        
-        // Change language on change
-        languageSelector.addEventListener('change', () => {
-            const selectedLanguage = languageSelector.value;
-            changeLanguage(selectedLanguage);
-        });
-    }
-    
-    const rtlToggle = document.getElementById('rtlToggle');
-    
-    if (rtlToggle) {
-        // Set initial state
-        const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
-        rtlToggle.checked = isRtl;
-        
-        // Toggle RTL/LTR on change
-        rtlToggle.addEventListener('change', () => {
-            const newDir = rtlToggle.checked ? 'rtl' : 'ltr';
-            document.documentElement.setAttribute('dir', newDir);
-            localStorage.setItem('textDirection', newDir);
-            
-            Toast.showToast('تم تغيير اتجاه النص بنجاح', 'success');
-        });
-    }
-}
-
-/**
- * Change application language
- * @param {string} language - Language code ('ar' for Arabic, 'en' for English)
- */
-function changeLanguage(language) {
-    const direction = language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.setAttribute('dir', direction);
-    document.documentElement.lang = language;
-    
-    localStorage.setItem('language', language);
-    localStorage.setItem('textDirection', direction);
-    
-    // Toggle RTL toggle if it exists
-    const rtlToggle = document.getElementById('rtlToggle');
-    if (rtlToggle) {
-        rtlToggle.checked = direction === 'rtl';
-    }
-    
-    Toast.showToast('تم تغيير لغة التطبيق بنجاح', 'success');
-}
-
-/**
- * Set up notification settings
- */
-function setupNotificationSettings() {
-    const notifyOperations = document.getElementById('notifyOperations');
-    const notifyLowStock = document.getElementById('notifyLowStock');
-    const notifySystem = document.getElementById('notifySystem');
-    
-    if (notifyOperations) {
-        // Set initial value
-        notifyOperations.checked = localStorage.getItem('notifyOperations') !== 'false';
-        
-        // Save setting on change
-        notifyOperations.addEventListener('change', () => {
-            localStorage.setItem('notifyOperations', notifyOperations.checked);
-        });
-    }
-    
-    if (notifyLowStock) {
-        // Set initial value
-        notifyLowStock.checked = localStorage.getItem('notifyLowStock') !== 'false';
-        
-        // Save setting on change
-        notifyLowStock.addEventListener('change', () => {
-            localStorage.setItem('notifyLowStock', notifyLowStock.checked);
-        });
-    }
-    
-    if (notifySystem) {
-        // Set initial value
-        notifySystem.checked = localStorage.getItem('notifySystem') !== 'false';
-        
-        // Save setting on change
-        notifySystem.addEventListener('change', () => {
-            localStorage.setItem('notifySystem', notifySystem.checked);
-        });
-    }
-    
-    // Test notification button
-    const testNotifButton = document.getElementById('testNotification');
-    if (testNotifButton) {
-        testNotifButton.addEventListener('click', () => {
-            Toast.showToast('هذا اختبار للإشعارات', 'info');
-        });
-    }
-}
-
-/**
- * Set up system settings
- */
-function setupSystemSettings() {
-    const lowStockThreshold = document.getElementById('lowStockThreshold');
-    
-    if (lowStockThreshold) {
-        // Set initial value
-        lowStockThreshold.value = localStorage.getItem('lowStockThreshold') || 5;
-        
-        // Save setting on change
-        lowStockThreshold.addEventListener('change', () => {
-            const value = parseInt(lowStockThreshold.value);
-            if (!isNaN(value) && value > 0) {
-                localStorage.setItem('lowStockThreshold', value);
-                Toast.showToast('تم تحديث حد المخزون المنخفض بنجاح', 'success');
-            } else {
-                Toast.showToast('يرجى إدخال قيمة صالحة', 'error');
-                lowStockThreshold.value = localStorage.getItem('lowStockThreshold') || 5;
-            }
-        });
-    }
-    
-    const autoLogout = document.getElementById('autoLogout');
-    
-    if (autoLogout) {
-        // Set initial value
-        autoLogout.value = localStorage.getItem('autoLogout') || 60;
-        
-        // Save setting on change
-        autoLogout.addEventListener('change', () => {
-            const value = parseInt(autoLogout.value);
-            if (!isNaN(value) && value >= 0) {
-                localStorage.setItem('autoLogout', value);
-                Toast.showToast('تم تحديث مدة تسجيل الخروج التلقائي بنجاح', 'success');
-            } else {
-                Toast.showToast('يرجى إدخال قيمة صالحة', 'error');
-                autoLogout.value = localStorage.getItem('autoLogout') || 60;
-            }
-        });
-    }
-}
-
-/**
- * Set up data backup and restore functionality
- */
-function setupDataBackupRestore() {
-    const backupButton = document.getElementById('backupData');
-    const restoreButton = document.getElementById('restoreData');
-    const resetButton = document.getElementById('resetData');
-    
-    if (backupButton) {
-        backupButton.addEventListener('click', () => {
-            backupData();
-        });
-    }
-    
-    if (restoreButton) {
-        restoreButton.addEventListener('click', () => {
-            Modal.showModal('استعادة البيانات', `
-                <form id="restoreForm">
-                    <div class="form-row">
-                        <label for="backupFile">ملف النسخ الاحتياطي</label>
-                        <input type="file" id="backupFile" accept=".json">
-                    </div>
-                    <div class="form-row btn-container">
-                        <button type="submit" class="btn-primary">استعادة البيانات</button>
-                    </div>
-                </form>
-            `, () => {
-                const form = document.getElementById('restoreForm');
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const file = document.getElementById('backupFile').files[0];
-                    if (file) {
-                        restoreData(file);
-                    } else {
-                        Toast.showToast('يرجى اختيار ملف النسخ الاحتياطي', 'error');
-                    }
-                });
-            });
-        });
-    }
-    
-    if (resetButton) {
-        resetButton.addEventListener('click', () => {
-            Modal.showConfirmModal(
-                'إعادة ضبط البيانات',
-                'هل أنت متأكد من رغبتك في إعادة ضبط البيانات؟ سيتم حذف جميع البيانات المخزنة.',
-                resetData,
-                null
-            );
-        });
-    }
-}
-
-/**
- * Back up application data
- */
-function backupData() {
-    // Collect all localStorage data
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        data[key] = localStorage.getItem(key);
-    }
-    
-    // Convert to JSON
-    const jsonData = JSON.stringify(data);
-    
-    // Create download link
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `warehouse-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    Toast.showToast('تم إنشاء نسخة احتياطية للبيانات بنجاح', 'success');
-}
-
-/**
- * Restore data from backup file
- * @param {File} file - The backup file
- */
-function restoreData(file) {
-    const reader = new FileReader();
-    
-    reader.onload = (event) => {
-        try {
-            const data = JSON.parse(event.target.result);
-            
-            // Validate data structure
-            if (!data || typeof data !== 'object') {
-                throw new Error('ملف النسخ الاحتياطي غير صالح');
-            }
-            
-            // Restore data to localStorage
-            for (const key in data) {
-                localStorage.setItem(key, data[key]);
-            }
-            
-            Toast.showToast('تم استعادة البيانات بنجاح', 'success');
-            Modal.closeModal();
-            
-            // Reload page to reflect changes
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        } catch (error) {
-            Toast.showToast('فشل في استعادة البيانات: ' + error.message, 'error');
+    // Apply theme
+    if (theme === 'dark') {
+        document.body.classList.add('dark-theme');
+        document.body.classList.remove('light-theme');
+    } else if (theme === 'light') {
+        document.body.classList.add('light-theme');
+        document.body.classList.remove('dark-theme');
+    } else {
+        // Auto theme based on system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark-theme');
+            document.body.classList.remove('light-theme');
+        } else {
+            document.body.classList.add('light-theme');
+            document.body.classList.remove('dark-theme');
         }
-    };
+    }
     
-    reader.onerror = () => {
-        Toast.showToast('فشل في قراءة الملف', 'error');
-    };
-    
-    reader.readAsText(file);
+    // Show toast
+    Toast.showToast('تم تغيير سمة النظام', 'success');
 }
 
 /**
- * Reset all application data
+ * Set up general settings form
  */
-function resetData() {
-    // Clear all localStorage data except user session
-    const userSession = localStorage.getItem('currentUser');
+function setupGeneralSettings() {
+    const generalSettingsForm = document.getElementById('generalSettingsForm');
     
-    localStorage.clear();
+    if (generalSettingsForm) {
+        // Load current settings
+        loadGeneralSettings();
+        
+        // Add event listener for form submission
+        generalSettingsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveGeneralSettings();
+        });
+    }
+}
+
+/**
+ * Load general settings from storage
+ */
+function loadGeneralSettings() {
+    // Get current settings from localStorage
+    const settings = LocalStorageAPI.getAppSettings();
     
-    // Restore user session to prevent logout
-    if (userSession) {
-        localStorage.setItem('currentUser', userSession);
+    // Update form fields with current settings
+    const systemNameInput = document.getElementById('system-name');
+    const itemsPerPageSelect = document.getElementById('items-per-page');
+    
+    if (systemNameInput && settings.systemName) {
+        systemNameInput.value = settings.systemName;
     }
     
-    Toast.showToast('تم إعادة ضبط البيانات بنجاح', 'success');
+    if (itemsPerPageSelect && settings.itemsPerPage) {
+        itemsPerPageSelect.value = settings.itemsPerPage;
+    }
+}
+
+/**
+ * Save general settings to storage
+ */
+function saveGeneralSettings() {
+    // Get values from form
+    const systemName = document.getElementById('system-name').value;
+    const itemsPerPage = document.getElementById('items-per-page').value;
     
-    // Reload page to reflect changes
+    // Save settings
+    const settings = {
+        systemName,
+        itemsPerPage
+    };
+    
+    // Update logo if new one is selected
+    const logoInput = document.getElementById('system-logo');
+    if (logoInput && logoInput.files && logoInput.files.length > 0) {
+        handleLogoUpload(logoInput.files[0], settings);
+    } else {
+        // Save settings without logo update
+        saveSettingsToStorage(settings);
+    }
+}
+
+/**
+ * Handle logo file upload
+ * @param {File} file - The logo file
+ * @param {Object} settings - The settings object to update
+ */
+function handleLogoUpload(file, settings) {
+    // In a real application, this would upload the file to a server
+    // For this demo, we'll use a mock upload
+    
+    // Check file type
+    if (!file.type.match('image.*')) {
+        Toast.showToast('يرجى اختيار ملف صورة صالح', 'error');
+        return;
+    }
+    
+    // Show loading toast
+    Toast.showToast('جارٍ رفع الشعار الجديد...', 'info');
+    
+    // Simulate upload delay
     setTimeout(() => {
-        window.location.reload();
+        // Mock successful upload
+        settings.logoUrl = 'assets/img/logo-new.png';
+        
+        // Save settings
+        saveSettingsToStorage(settings);
+        
+        // Show success toast
+        Toast.showToast('تم تحديث الشعار بنجاح', 'success');
     }, 1500);
+}
+
+/**
+ * Save settings to storage
+ * @param {Object} settings - The settings to save
+ */
+function saveSettingsToStorage(settings) {
+    // Save to localStorage
+    LocalStorageAPI.saveAppSettings(settings);
+    
+    // Update UI with new settings
+    updateUIWithNewSettings(settings);
+    
+    // Show success toast
+    Toast.showToast('تم حفظ الإعدادات بنجاح', 'success');
+}
+
+/**
+ * Update UI with new settings
+ * @param {Object} settings - The new settings
+ */
+function updateUIWithNewSettings(settings) {
+    // Update system name in UI
+    if (settings.systemName) {
+        const systemNameElements = document.querySelectorAll('.logo h2');
+        systemNameElements.forEach(el => {
+            el.textContent = settings.systemName;
+        });
+    }
+    
+    // Update logo if changed
+    if (settings.logoUrl) {
+        const logoImages = document.querySelectorAll('.logo img');
+        logoImages.forEach(img => {
+            img.src = settings.logoUrl;
+        });
+    }
+}
+
+/**
+ * Show account settings tab
+ */
+function showAccountSettings() {
+    const accountTab = document.querySelector('.tab-navigation button[data-tab="account"]');
+    if (accountTab) {
+        accountTab.click();
+    }
+}
+
+/**
+ * Show notifications settings tab
+ */
+function showNotificationsSettings() {
+    const notificationsTab = document.querySelector('.tab-navigation button[data-tab="notifications"]');
+    if (notificationsTab) {
+        notificationsTab.click();
+    }
 }
 
 // Export settings module
 const SettingsModule = {
     initialize,
-    applyTheme,
-    applyFontSize,
-    changeLanguage
+    showAccountSettings,
+    showNotificationsSettings
 };
 
 export default SettingsModule;
