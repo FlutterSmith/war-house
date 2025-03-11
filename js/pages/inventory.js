@@ -14,13 +14,13 @@ import I18n from '../utils/i18n.js';
 function initialize() {
     // Set up warehouse tabs
     setupWarehouseTabs();
-    
+
     // Set up search functionality
     setupSearchFunctionality();
-    
+
     // Load initial inventory data (default: durable warehouse)
     loadInventoryData('durable');
-    
+
     // Set up action buttons for inventory items
     setupActionButtons();
 }
@@ -30,18 +30,18 @@ function initialize() {
  */
 function setupWarehouseTabs() {
     const warehouseTabs = document.querySelectorAll('.warehouse-tab');
-    
+
     warehouseTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             // Remove active class from all tabs
             warehouseTabs.forEach(t => t.classList.remove('active'));
-            
+
             // Add active class to clicked tab
             tab.classList.add('active');
-            
+
             // Get warehouse type from data attribute
             const warehouseType = tab.getAttribute('data-warehouse');
-            
+
             // Load inventory data for selected warehouse
             loadInventoryData(warehouseType);
         });
@@ -53,12 +53,12 @@ function setupWarehouseTabs() {
  */
 function setupSearchFunctionality() {
     const searchInput = document.getElementById('inventorySearch');
-    
+
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.trim();
             const activeWarehouse = document.querySelector('.warehouse-tab.active');
-            
+
             if (activeWarehouse) {
                 const warehouseType = activeWarehouse.getAttribute('data-warehouse');
                 filterAndDisplayInventory(warehouseType, searchTerm);
@@ -75,7 +75,7 @@ function setupSearchFunctionality() {
 function filterAndDisplayInventory(warehouseType, searchTerm = '') {
     // Get filtered inventory items
     const filteredItems = InventoryService.filterInventoryData(warehouseType, searchTerm);
-    
+
     // Render the inventory table with the filtered data
     renderInventoryTable(filteredItems);
 }
@@ -88,10 +88,10 @@ function loadInventoryData(warehouseType) {
     // Get search term (if any)
     const searchInput = document.getElementById('inventorySearch');
     const searchTerm = searchInput ? searchInput.value.trim() : '';
-    
+
     // Filter and display inventory
     filterAndDisplayInventory(warehouseType, searchTerm);
-    
+
     // Update warehouse name display
     const warehouseNameElement = document.querySelector('.warehouse-name');
     if (warehouseNameElement) {
@@ -106,10 +106,10 @@ function loadInventoryData(warehouseType) {
 function renderInventoryTable(data) {
     const tableBody = document.querySelector('.inventory-table tbody');
     if (!tableBody) return;
-    
+
     // Clear existing table rows
     tableBody.innerHTML = '';
-    
+
     // Show message if no items found
     if (data.length === 0) {
         tableBody.innerHTML = `
@@ -119,12 +119,12 @@ function renderInventoryTable(data) {
         `;
         return;
     }
-    
+
     // Add rows for each item
     data.forEach(item => {
         const row = document.createElement('tr');
         row.dataset.itemCode = item.code;
-        
+
         row.innerHTML = `
             <td>${item.code}</td>
             <td>${item.name}</td>
@@ -141,10 +141,10 @@ function renderInventoryTable(data) {
                 </button>
             </td>
         `;
-        
+
         tableBody.appendChild(row);
     });
-    
+
     // Reattach event listeners for action buttons
     setupActionButtons();
 }
@@ -180,7 +180,7 @@ function setupActionButtons() {
             viewItemDetails(itemCode);
         });
     });
-    
+
     // Edit item buttons
     document.querySelectorAll('.edit-item').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -197,7 +197,7 @@ function setupActionButtons() {
  */
 function viewItemDetails(itemCode) {
     const item = findItemByCode(itemCode);
-    
+
     if (item) {
         Modal.showModal('تفاصيل الصنف', `
             <div class="item-details">
@@ -238,7 +238,7 @@ function viewItemDetails(itemCode) {
  */
 function editItemDetails(itemCode) {
     const item = findItemByCode(itemCode);
-    
+
     if (item) {
         Modal.showModal('تعديل بيانات الصنف', `
             <form id="edit-item-form" class="form-vertical">
@@ -304,24 +304,24 @@ function editItemDetails(itemCode) {
 function saveItemChanges(warehouseType, updatedItem) {
     // Get current inventory data
     const inventoryData = JSON.parse(localStorage.getItem('inventoryData'));
-    
+
     // Find the item in the inventory
     const items = inventoryData[warehouseType];
     const itemIndex = items.findIndex(item => item.code === updatedItem.code);
-    
+
     if (itemIndex >= 0) {
         // Update the item
         items[itemIndex] = updatedItem;
-        
+
         // Save updated inventory data
         localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
-        
+
         // Reload inventory data
         loadInventoryData(warehouseType);
-        
+
         // Close modal
         Modal.closeModal();
-        
+
         // Show success message
         Toast.showToast('تم تحديث بيانات الصنف بنجاح', 'success');
     }
@@ -335,7 +335,7 @@ function saveItemChanges(warehouseType, updatedItem) {
 function findItemByCode(code) {
     // Get current inventory data
     const inventoryData = JSON.parse(localStorage.getItem('inventoryData'));
-    
+
     // Check all warehouses
     for (const warehouseType in inventoryData) {
         const foundItem = inventoryData[warehouseType].find(item => item.code === code);
@@ -343,7 +343,7 @@ function findItemByCode(code) {
             return { ...foundItem, warehouseType };
         }
     }
-    
+
     return null;
 }
 

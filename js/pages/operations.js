@@ -79,16 +79,16 @@ function setupWarehouseSelector() {
 function updateOperationInstructions() {
     const activeOperation = document.querySelector('.operation-option.active');
     const instructionsElement = document.querySelector('.operation-instructions');
-    
+
     if (activeOperation && instructionsElement) {
         const operationType = activeOperation.getAttribute('data-operation');
-        
+
         // Set operation title
         const operationTitle = document.querySelector('.operation-title');
         if (operationTitle) {
             operationTitle.textContent = I18n.getOperationTypeName(operationType);
         }
-        
+
         // Set operation instructions
         switch (operationType) {
             case 'add':
@@ -109,7 +109,7 @@ function updateOperationInstructions() {
                 instructionsElement.textContent = 'قم بإدخال بيانات الصنف المراد إتلافه من المخزن.';
                 break;
         }
-        
+
         // Hide target warehouse selector if not a transfer operation
         if (operationType !== 'transfer') {
             disableTransferOptions();
@@ -143,7 +143,7 @@ function disableTransferOptions() {
 function updateWarehouseDisplay() {
     const activeWarehouse = document.querySelector('.warehouse-option.active');
     const warehouseNameElement = document.querySelector('.warehouse-name');
-    
+
     if (activeWarehouse && warehouseNameElement) {
         const warehouseType = activeWarehouse.getAttribute('data-warehouse');
         warehouseNameElement.textContent = I18n.getWarehouseName(warehouseType);
@@ -155,27 +155,27 @@ function updateWarehouseDisplay() {
  */
 function setupInventoryForm() {
     const inventoryForm = document.getElementById('inventoryOperationForm');
-    
+
     if (inventoryForm) {
         // Initialize form validation
         const validateForm = FormValidator.setupInventoryFormValidation(inventoryForm);
-        
+
         // Set up form submission handler
         inventoryForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
+
             // Validate form
             if (!validateForm()) {
                 Toast.showToast('يرجى إدخال جميع الحقول المطلوبة بشكل صحيح', 'error');
                 return;
             }
-            
+
             // Get active operation and warehouse
             const activeOperation = document.querySelector('.operation-option.active').getAttribute('data-operation');
             const activeWarehouse = document.querySelector('.warehouse-option.active');
             const activeWarehouseType = activeWarehouse.getAttribute('data-warehouse');
             const activeWarehouseName = activeWarehouse.textContent.trim();
-            
+
             // Get form data
             const itemCode = document.getElementById('itemCode').value;
             const itemName = document.getElementById('itemName').value;
@@ -183,7 +183,7 @@ function setupInventoryForm() {
             const itemUnitSelect = document.getElementById('itemUnit');
             const itemUnit = itemUnitSelect.options[itemUnitSelect.selectedIndex].text;
             const notes = document.getElementById('operationNotes').value;
-            
+
             // For transfer operations, get target warehouse
             let targetWarehouse = null;
             if (activeOperation === 'transfer') {
@@ -192,7 +192,7 @@ function setupInventoryForm() {
                     targetWarehouse = targetWarehouseSelect.value;
                 }
             }
-            
+
             // Create operation data
             const operationData = {
                 operation: activeOperation,
@@ -204,7 +204,7 @@ function setupInventoryForm() {
                 itemUnit: itemUnit,
                 notes: notes
             };
-            
+
             // Show confirmation modal
             showOperationConfirmation(operationData, activeWarehouseName);
         });
@@ -224,7 +224,7 @@ function showOperationConfirmation(operationData, warehouseName) {
         operationData.itemUnit,
         warehouseName
     );
-    
+
     // Show confirmation modal
     Modal.showConfirmModal('تأكيد العملية', message, () => {
         // Process the operation
@@ -241,15 +241,15 @@ function processOperation(operationData) {
     const success = OperationsService.performOperation(operationData, () => {
         // Show success message
         Toast.showToast(I18n.getOperationSuccessMessage(operationData.operation), 'success');
-        
+
         // Reset form
         document.getElementById('inventoryOperationForm').reset();
-        
+
         // Update dashboard stats
         DashboardModule.updateDashboardStats();
         DashboardModule.updateRecentActivities();
     });
-    
+
     if (!success) {
         Toast.showToast('فشلت العملية، يرجى التحقق من صلاحياتك', 'error');
     }
@@ -261,7 +261,7 @@ function processOperation(operationData) {
 function setupAutoComplete() {
     const itemCodeInput = document.getElementById('itemCode');
     const itemNameInput = document.getElementById('itemName');
-    
+
     if (itemCodeInput && itemNameInput) {
         // When item code is entered, auto-fill the name
         itemCodeInput.addEventListener('blur', () => {
@@ -270,7 +270,7 @@ function setupAutoComplete() {
                 const item = LocalStorageAPI.findItemByCode(code);
                 if (item) {
                     itemNameInput.value = item.name;
-                    
+
                     // Also set the unit if available
                     const unitSelect = document.getElementById('itemUnit');
                     if (unitSelect) {
@@ -285,7 +285,7 @@ function setupAutoComplete() {
                 }
             }
         });
-        
+
         // When item name is entered, auto-fill the code
         itemNameInput.addEventListener('blur', () => {
             const name = itemNameInput.value.trim();
@@ -293,7 +293,7 @@ function setupAutoComplete() {
                 const item = LocalStorageAPI.findItemByName(name);
                 if (item) {
                     itemCodeInput.value = item.code;
-                    
+
                     // Also set the unit if available
                     const unitSelect = document.getElementById('itemUnit');
                     if (unitSelect) {
@@ -322,10 +322,10 @@ function setActiveOperation(operation) {
         document.querySelectorAll('.operation-option').forEach(opt => {
             opt.classList.remove('active');
         });
-        
+
         // Add active class to selected option
         operationOption.classList.add('active');
-        
+
         // Update operation instructions
         updateOperationInstructions();
     }
@@ -342,10 +342,10 @@ function setActiveWarehouse(warehouse) {
         document.querySelectorAll('.warehouse-option').forEach(opt => {
             opt.classList.remove('active');
         });
-        
+
         // Add active class to selected option
         warehouseOption.classList.add('active');
-        
+
         // Update warehouse display
         updateWarehouseDisplay();
     }

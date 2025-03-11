@@ -1,294 +1,357 @@
 /**
- * Main Application Entry Point
- * Initializes the application and coordinates all modules
+ * Main Application Module
+ * Entry point for the warehouse management system
  */
 
-import Auth from './auth/auth.js';
-import LocalStorageAPI from './api/localStorage.js';
+// Import page modules
+import DashboardModule from './pages/dashboard.js';
+import InventoryModule from './pages/inventory.js';
+import OperationsModule from './pages/operations.js';
+import ReportsModule from './pages/reports.js';
+import SettingsModule from './pages/settings.js';
+
+// Import components
 import Modal from './components/modal.js';
 import Toast from './components/toast.js';
+
+// Import utilities
+import Auth from './auth/auth.js';
 import Animations from './utils/animations.js';
 import Permissions from './utils/permissions.js';
-import DateFormatter from './utils/date-formatter.js';
-import I18n from './utils/i18n.js';
-
-// Initialize the application when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize the application
-    initialize();
-});
 
 /**
- * Initialize the application
+ * Application initialization
  */
-function initialize() {
-    // Check if user is authenticated, if not redirect to login page
+document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication
     if (!Auth.isAuthenticated()) {
         window.location.href = 'login.html';
         return;
     }
 
-    // Initialize and load data from localStorage
-    LocalStorageAPI.initializeLocalStorage();
+    // Setup UI components
+    setupUI();
 
-    // Initialize components
-    Modal.initializeModalSystem();
-    Toast.initializeToastSystem();
+    // Initialize page modules
+    initializePages();
 
-    // Add animation classes to elements when the page loads
-    Animations.animateElementsOnLoad();
+    // Setup navigation
+    setupNavigation();
 
-    // Setup user profile information
-    setupUserProfile();
+    // Apply permissions
+    applyRoleBasedPermissions();
 
-    // Add smooth scrolling for the page
-    enableSmoothScrolling();
+    // Initialize page animations
+    Animations.initPageAnimations();
 
-    // Page transition animations
-    document.body.classList.add('fade-in');
-
-    // Ensure icons are visible
-    Animations.fixIconDisplay();
-
-    // Initialize all modules
-    initializeModules();
-
-    // Log successful initialization
-    console.log('Application initialized successfully');
-}
+    // Show welcome toast
+    const currentUser = Auth.getCurrentUser();
+    if (currentUser) {
+        Toast.showToast(`مرحباً ${currentUser.name}! تم تسجيل الدخول بنجاح`, 'success');
+    }
+});
 
 /**
- * Initialize all application modules
- * This function will be responsible for initializing all page modules when they are created
+ * Setup UI components and event handlers
  */
-function initializeModules() {
-    // These will be imported and initialized as they're implemented:
-    // DashboardModule.initialize();
-    // InventoryModule.initialize();
-    // OperationsModule.initialize();
-    // ReportsModule.initialize();
-    // SettingsModule.initialize();
-    
-    // For now, display a toast to show the app is loaded
-    Toast.showToast('تم تحميل النظام بنجاح', 'success');
-    
-    // Set up role-based permissions
-    setupRoleBasedPermissions();
-}
+function setupUI() {
+    // Setup sidebar toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
 
-/**
- * Set up role-based permissions
- */
-function setupRoleBasedPermissions() {
-    const roleSelector = document.getElementById('userRoleSelector');
-    if (roleSelector) {
-        roleSelector.addEventListener('change', () => {
-            Permissions.applyPermissions(roleSelector.value);
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
         });
+    }
 
-        // Apply default permissions based on initial role
+    // Setup user role selector
+    setupRoleSelector();
+
+    // Setup logout functionality
+    setupLogout();
+
+    // Apply theme settings
+    applyTheme();
+}
+
+/**
+ * Initialize all page modules
+ */
+function initializePages() {
+    // Initialize dashboard module
+    DashboardModule.initialize();
+
+    // Initialize inventory module
+    InventoryModule.initialize();
+
+    // Initialize operations module (will be initialized on demand)
+
+    // Initialize reports module (will be initialized on demand)
+
+    // Initialize settings module (will be initialized on demand)
+}
+
+/**
+ * Setup navigation between sections
+ */
+function setupNavigation() {
+    const navLinks = document.querySelectorAll('.nav-menu a');
+    const sections = document.querySelectorAll('main section');
+    const pageTitle = document.getElementById('currentPageTitle');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            // Remove active class from all links
+            navLinks.forEach(l => l.parentElement.classList.remove('active'));
+
+            // Add active class to clicked link
+            this.parentElement.classList.add('active');
+
+            // Get section ID
+            const sectionId = this.getAttribute('data-section');
+
+            // Hide all sections
+            sections.forEach(section => section.classList.add('hidden'));
+
+            // Show selected section
+            const targetSection = document.getElementById(`${sectionId}-section`);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+
+                // Update page title
+                if (pageTitle) {
+                    pageTitle.textContent = this.querySelector('span').textContent;
+                }
+
+                // Initialize module on first access
+                initializeModuleOnFirstAccess(sectionId);
+
+                // Add fade-in animation
+                targetSection.classList.add('fade-in');
+                setTimeout(() => {
+                    targetSection.classList.remove('fade-in');
+                }, 500);
+            }
+        });
+    });
+}
+
+/**
+ * Initialize module on first access
+ * @param {string} sectionId - The section ID
+ */
+function initializeModuleOnFirstAccess(sectionId) {
+    switch (sectionId) {
+        case 'operations':
+            // Lazy initialize operations module
+            OperationsModule.initialize();
+            break;
+
+        case 'reports':
+            // Lazy initialize reports module
+            ReportsModule.initialize();
+            break;
+
+        case 'settings':
+            // Lazy initialize settings module
+            SettingsModule.initialize();
+            break;
+    }
+}
+
+/**
+ * Setup user role selector
+ */
+function setupRoleSelector() {
+    const roleSelector = document.getElementById('userRoleSelector');
+
+    if (roleSelector) {
+        // Set current user's role
         const currentUser = Auth.getCurrentUser();
-        if (currentUser) {
-            Permissions.applyPermissions(currentUser.role);
+        if (currentUser && currentUser.role) {
+            roleSelector.value = currentUser.role;
+        }
+
+        // Add change event listener
+        roleSelector.addEventListener('change', () => {
+            const newRole = roleSelector.value;
+
+            // Confirm role change
+            Modal.showModal('تغيير الصلاحية', `
+                <div class="confirmation-message">
+                    <p>هل أنت متأكد من تغيير الصلاحية إلى "${getRoleName(newRole)}"؟</p>
+                    <div class="button-group">
+                        <button class="btn-primary confirm-btn">نعم، تغيير الصلاحية</button>
+                        <button class="btn-secondary cancel-btn">إلغاء</button>
+                    </div>
+                </div>
+            `, (modal) => {
+                const confirmBtn = modal.querySelector('.confirm-btn');
+                const cancelBtn = modal.querySelector('.cancel-btn');
+
+                confirmBtn.addEventListener('click', () => {
+                    // Change role
+                    changeUserRole(newRole);
+                    Modal.closeModal();
+                });
+
+                cancelBtn.addEventListener('click', () => {
+                    // Reset selector to current role
+                    roleSelector.value = Auth.getCurrentUser().role;
+                    Modal.closeModal();
+                });
+            });
+        });
+    }
+}
+
+/**
+ * Change user role and update permissions
+ * @param {string} newRole - The new role
+ */
+function changeUserRole(newRole) {
+    // Update user role
+    Auth.updateUserRole(newRole);
+
+    // Apply new permissions
+    applyRoleBasedPermissions();
+
+    // Show toast notification
+    Toast.showToast(`تم تغيير الصلاحية إلى "${getRoleName(newRole)}" بنجاح`, 'success');
+}
+
+/**
+ * Get human-readable role name
+ * @param {string} role - The role code
+ * @returns {string} The human-readable role name
+ */
+function getRoleName(role) {
+    const roleNames = {
+        'dean': 'عميد الكلية',
+        'director': 'مدير الكلية',
+        'storekeeper': 'أمين المخزن',
+        'staff': 'موظف المخازن'
+    };
+
+    return roleNames[role] || role;
+}
+
+/**
+ * Setup logout functionality
+ */
+function setupLogout() {
+    const logoutButton = document.querySelector('.logout-item a');
+
+    if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // Show confirmation modal
+            Modal.showModal('تسجيل الخروج', `
+                <div class="confirmation-message">
+                    <p>هل أنت متأكد من تسجيل الخروج من النظام؟</p>
+                    <div class="button-group">
+                        <button class="btn-primary confirm-btn">نعم، تسجيل الخروج</button>
+                        <button class="btn-secondary cancel-btn">إلغاء</button>
+                    </div>
+                </div>
+            `, (modal) => {
+                const confirmBtn = modal.querySelector('.confirm-btn');
+                const cancelBtn = modal.querySelector('.cancel-btn');
+
+                confirmBtn.addEventListener('click', () => {
+                    // Logout
+                    Auth.logout();
+                    window.location.href = 'login.html';
+                });
+
+                cancelBtn.addEventListener('click', () => {
+                    Modal.closeModal();
+                });
+            });
+        });
+    }
+}
+
+/**
+ * Apply role-based permissions
+ */
+function applyRoleBasedPermissions() {
+    const currentUser = Auth.getCurrentUser();
+
+    if (currentUser) {
+        Permissions.applyPermissions(currentUser.role);
+    }
+}
+
+/**
+ * Apply theme settings from localStorage
+ */
+function applyTheme() {
+    const theme = localStorage.getItem('theme') || 'light';
+
+    if (theme === 'dark') {
+        document.body.classList.add('dark-theme');
+    } else if (theme === 'light') {
+        document.body.classList.add('light-theme');
+    } else {
+        // Auto theme based on system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.add('light-theme');
         }
     }
 }
 
 /**
- * Setup user profile and logout functionality
+ * Initialize dummy data for testing
  */
-function setupUserProfile() {
-    const currentUser = Auth.getCurrentUser();
-    
-    if (!currentUser) {
+function initializeDummyData() {
+    // Check if data already exists
+    if (localStorage.getItem('inventoryData')) {
         return;
     }
-    
-    // Update user info in the UI
-    updateUserInfo(currentUser);
-    
-    // Set up logout functionality
-    const logoutLink = document.querySelector('.nav-menu li:last-child a');
-    if (logoutLink) {
-        logoutLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            logout();
-        });
-    }
+
+    // Inventory data
+    const inventoryData = {
+        durable: [
+            { code: "D001", name: "حاسوب مكتبي", quantity: 15, unit: "جهاز", lastUpdate: "2025/02/15", status: "متوفر" },
+            { code: "D002", name: "شاشة LCD", quantity: 20, unit: "قطعة", lastUpdate: "2025/03/01", status: "متوفر" },
+            { code: "D003", name: "طابعة ليزر", quantity: 5, unit: "جهاز", lastUpdate: "2025/01/20", status: "منخفض" },
+            { code: "D004", name: "ماسح ضوئي", quantity: 3, unit: "جهاز", lastUpdate: "2024/12/10", status: "منخفض" },
+            { code: "D005", name: "كرسي مكتبي", quantity: 25, unit: "قطعة", lastUpdate: "2025/03/15", status: "متوفر" }
+        ],
+        consumable: [
+            { code: "C001", name: "ورق A4", quantity: 150, unit: "رزمة", lastUpdate: "2025/03/20", status: "متوفر" },
+            { code: "C002", name: "أقلام جافة", quantity: 200, unit: "قطعة", lastUpdate: "2025/02/25", status: "متوفر" },
+            { code: "C003", name: "حبر طابعة أسود", quantity: 5, unit: "عبوة", lastUpdate: "2025/01/10", status: "منخفض" },
+            { code: "C004", name: "دباسة", quantity: 30, unit: "قطعة", lastUpdate: "2024/12/15", status: "متوفر" },
+            { code: "C005", name: "ملفات بلاستيكية", quantity: 100, unit: "قطعة", lastUpdate: "2025/03/05", status: "متوفر" }
+        ],
+        damaged: [
+            { code: "D006", name: "حاسوب محمول", quantity: 2, unit: "جهاز", lastUpdate: "2024/11/20", status: "للإصلاح" },
+            { code: "D007", name: "طابعة نافثة للحبر", quantity: 1, unit: "جهاز", lastUpdate: "2025/01/05", status: "للإتلاف" },
+            { code: "C006", name: "حبر طابعة ملون", quantity: 3, unit: "عبوة", lastUpdate: "2024/12/20", status: "للإتلاف" }
+        ]
+    };
+
+    // Operations data
+    const operationsData = [
+        { id: "OP001", type: "إضافة", warehouse: "المستديم", item: "حاسوب مكتبي", quantity: 5, unit: "جهاز", date: "2025/01/15", user: "أحمد محمد", notes: "توريد جديد" },
+        { id: "OP002", type: "سحب", warehouse: "المستهلك", item: "ورق A4", quantity: 10, unit: "رزمة", date: "2025/02/01", user: "سارة أحمد", notes: "لقسم شؤون الطلاب" },
+        { id: "OP003", type: "إتلاف", warehouse: "المستهلك", item: "حبر طابعة ملون", quantity: 2, unit: "عبوة", date: "2025/02/10", user: "محمد علي", notes: "منتهي الصلاحية" },
+        { id: "OP004", type: "نقل", warehouse: "المستديم", item: "طابعة ليزر", quantity: 1, unit: "جهاز", date: "2025/03/05", user: "فاطمة حسن", notes: "نقل لقسم المحاسبة" }
+    ];
+
+    // Save data to localStorage
+    localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
+    localStorage.setItem('operationsData', JSON.stringify(operationsData));
+    localStorage.setItem('dataInitialized', 'true');
 }
 
-/**
- * Update user information in the UI
- * @param {Object} user - The user object
- */
-function updateUserInfo(user) {
-    const avatarElement = document.querySelector('.avatar');
-    const roleSelector = document.getElementById('userRoleSelector');
-
-    if (avatarElement) {
-        // Add user name as tooltip
-        avatarElement.setAttribute('title', user.name);
-
-        // Set up dropdown menu for the avatar
-        avatarElement.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleUserMenu();
-        });
-    }
-
-    // Set the role selector to match the user's role
-    if (roleSelector) {
-        roleSelector.value = user.role;
-    }
-}
-
-/**
- * Toggle user menu
- */
-function toggleUserMenu() {
-    let userMenu = document.querySelector('.user-menu');
-
-    if (!userMenu) {
-        // Create user menu if it doesn't exist
-        const currentUser = Auth.getCurrentUser();
-        userMenu = document.createElement('div');
-        userMenu.className = 'user-menu';
-        userMenu.innerHTML = `
-            <div class="user-menu-header">
-                <strong>${currentUser.name}</strong>
-                <span>${I18n.getRoleDisplayName(currentUser.role)}</span>
-            </div>
-            <ul>
-                <li><a href="#" id="viewProfile"><i class="fas fa-user"></i> عرض الملف الشخصي</a></li>
-                <li><a href="#" id="changePassword"><i class="fas fa-key"></i> تغيير كلمة المرور</a></li>
-                <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
-            </ul>
-        `;
-
-        document.querySelector('.topbar-right').appendChild(userMenu);
-
-        // Add event listeners for menu items
-        document.getElementById('logoutBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            logout();
-        });
-
-        document.getElementById('viewProfile').addEventListener('click', (e) => {
-            e.preventDefault();
-            showUserProfile();
-        });
-
-        document.getElementById('changePassword').addEventListener('click', (e) => {
-            e.preventDefault();
-            showChangePasswordModal();
-        });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.user-menu') && !e.target.closest('.avatar')) {
-                userMenu.classList.remove('show');
-            }
-        });
-    } else {
-        // Toggle menu visibility
-        userMenu.classList.toggle('show');
-    }
-}
-
-/**
- * Show user profile modal
- */
-function showUserProfile() {
-    const currentUser = Auth.getCurrentUser();
-    
-    Modal.showModal('الملف الشخصي', `
-        <div class="user-profile">
-            <img src="assets/img/user-avatar.png" alt="صورة المستخدم" class="profile-avatar">
-            <h3>${currentUser.name}</h3>
-            <p>اسم المستخدم: ${currentUser.username}</p>
-            <p>الصلاحية: ${I18n.getRoleDisplayName(currentUser.role)}</p>
-            <p>تاريخ آخر تسجيل دخول: ${DateFormatter.formatDate(new Date(currentUser.loginTime))}</p>
-        </div>
-    `);
-}
-
-/**
- * Show change password modal
- */
-function showChangePasswordModal() {
-    const currentUser = Auth.getCurrentUser();
-    
-    Modal.showModal('تغيير كلمة المرور', `
-        <form id="passwordChangeForm" class="form-vertical">
-            <div class="form-row">
-                <label for="currentPassword">كلمة المرور الحالية</label>
-                <input type="password" id="currentPassword" required>
-            </div>
-            <div class="form-row">
-                <label for="newPassword">كلمة المرور الجديدة</label>
-                <input type="password" id="newPassword" required>
-            </div>
-            <div class="form-row">
-                <label for="confirmPassword">تأكيد كلمة المرور</label>
-                <input type="password" id="confirmPassword" required>
-            </div>
-            <div class="form-row btn-container">
-                <button type="submit" class="btn-primary">تغيير كلمة المرور</button>
-            </div>
-        </form>
-    `, () => {
-        // Setup form validation after modal is shown
-        const form = document.getElementById('passwordChangeForm');
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-
-            if (newPassword !== confirmPassword) {
-                Toast.showToast('كلمة المرور الجديدة وتأكيدها غير متطابقين', 'error');
-                return;
-            }
-
-            // Use Auth module to change password
-            const result = Auth.changePassword(currentUser.username, currentPassword, newPassword);
-
-            if (result.success) {
-                Toast.showToast(result.message, 'success');
-                Modal.closeModal();
-            } else {
-                Toast.showToast(result.message, 'error');
-            }
-        });
-    });
-}
-
-/**
- * Log out user
- */
-function logout() {
-    Modal.showConfirmModal('تسجيل الخروج', 'هل أنت متأكد من رغبتك في تسجيل الخروج؟', () => {
-        // Use Auth module to logout
-        Auth.logout();
-
-        // Show logout toast
-        Toast.showToast('تم تسجيل الخروج بنجاح', 'info');
-
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1000);
-    });
-}
-
-/**
- * Enable smooth scrolling
- */
-function enableSmoothScrolling() {
-    document.documentElement.style.scrollBehavior = 'smooth';
-}
-
-// Export app module for use in other files
-export {
-    initialize
-};
+// Initialize dummy data
+initializeDummyData();
