@@ -13,10 +13,10 @@ import LocalStorageAPI from '../api/localStorage.js';
 function initialize() {
     // Setup tab navigation
     setupTabNavigation();
-    
+
     // Setup theme selector
     setupThemeSelector();
-    
+
     // Setup general settings form
     setupGeneralSettings();
 }
@@ -26,15 +26,15 @@ function initialize() {
  */
 function setupTabNavigation() {
     const tabButtons = document.querySelectorAll('.tab-navigation button');
-    
+
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             // Remove active class from all buttons
             tabButtons.forEach(b => b.classList.remove('active'));
-            
+
             // Add active class to clicked button
             button.classList.add('active');
-            
+
             // Show corresponding tab content
             const tabName = button.getAttribute('data-tab');
             showTabContent(tabName);
@@ -50,7 +50,7 @@ function showTabContent(tabName) {
     // Hide all forms first
     const forms = document.querySelectorAll('.tab-content form');
     forms.forEach(form => form.style.display = 'none');
-    
+
     // Show the selected form
     const selectedForm = document.getElementById(`${tabName}SettingsForm`);
     if (selectedForm) {
@@ -63,12 +63,12 @@ function showTabContent(tabName) {
  */
 function setupThemeSelector() {
     const themeSelector = document.getElementById('theme-selector');
-    
+
     if (themeSelector) {
         // Set theme selector to match current theme
         const currentTheme = localStorage.getItem('theme') || 'light';
         themeSelector.value = currentTheme;
-        
+
         // Add event listener for theme change
         themeSelector.addEventListener('change', () => {
             const selectedTheme = themeSelector.value;
@@ -84,7 +84,7 @@ function setupThemeSelector() {
 function changeTheme(theme) {
     // Save theme preference
     localStorage.setItem('theme', theme);
-    
+
     // Apply theme
     if (theme === 'dark') {
         document.body.classList.add('dark-theme');
@@ -102,7 +102,7 @@ function changeTheme(theme) {
             document.body.classList.remove('dark-theme');
         }
     }
-    
+
     // Show toast
     Toast.showToast('تم تغيير سمة النظام', 'success');
 }
@@ -112,11 +112,11 @@ function changeTheme(theme) {
  */
 function setupGeneralSettings() {
     const generalSettingsForm = document.getElementById('generalSettingsForm');
-    
+
     if (generalSettingsForm) {
         // Load current settings
         loadGeneralSettings();
-        
+
         // Add event listener for form submission
         generalSettingsForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -131,15 +131,15 @@ function setupGeneralSettings() {
 function loadGeneralSettings() {
     // Get current settings from localStorage
     const settings = LocalStorageAPI.getAppSettings();
-    
+
     // Update form fields with current settings
     const systemNameInput = document.getElementById('system-name');
     const itemsPerPageSelect = document.getElementById('items-per-page');
-    
+
     if (systemNameInput && settings.systemName) {
         systemNameInput.value = settings.systemName;
     }
-    
+
     if (itemsPerPageSelect && settings.itemsPerPage) {
         itemsPerPageSelect.value = settings.itemsPerPage;
     }
@@ -152,13 +152,13 @@ function saveGeneralSettings() {
     // Get values from form
     const systemName = document.getElementById('system-name').value;
     const itemsPerPage = document.getElementById('items-per-page').value;
-    
+
     // Save settings
     const settings = {
         systemName,
         itemsPerPage
     };
-    
+
     // Update logo if new one is selected
     const logoInput = document.getElementById('system-logo');
     if (logoInput && logoInput.files && logoInput.files.length > 0) {
@@ -177,24 +177,24 @@ function saveGeneralSettings() {
 function handleLogoUpload(file, settings) {
     // In a real application, this would upload the file to a server
     // For this demo, we'll use a mock upload
-    
+
     // Check file type
     if (!file.type.match('image.*')) {
         Toast.showToast('يرجى اختيار ملف صورة صالح', 'error');
         return;
     }
-    
+
     // Show loading toast
     Toast.showToast('جارٍ رفع الشعار الجديد...', 'info');
-    
+
     // Simulate upload delay
     setTimeout(() => {
         // Mock successful upload
         settings.logoUrl = 'assets/img/logo-new.png';
-        
+
         // Save settings
         saveSettingsToStorage(settings);
-        
+
         // Show success toast
         Toast.showToast('تم تحديث الشعار بنجاح', 'success');
     }, 1500);
@@ -207,10 +207,10 @@ function handleLogoUpload(file, settings) {
 function saveSettingsToStorage(settings) {
     // Save to localStorage
     LocalStorageAPI.saveAppSettings(settings);
-    
+
     // Update UI with new settings
     updateUIWithNewSettings(settings);
-    
+
     // Show success toast
     Toast.showToast('تم حفظ الإعدادات بنجاح', 'success');
 }
@@ -227,7 +227,7 @@ function updateUIWithNewSettings(settings) {
             el.textContent = settings.systemName;
         });
     }
-    
+
     // Update logo if changed
     if (settings.logoUrl) {
         const logoImages = document.querySelectorAll('.logo img');

@@ -26,7 +26,7 @@ const MIN_STOCK_LEVEL = 5;
 function processInventoryOperation(operationData) {
     // Get current inventory data
     const inventoryData = LocalStorageAPI.getInventoryData();
-    
+
     // Get current user data
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     const userName = currentUser ? currentUser.name : 'مستخدم النظام';
@@ -37,7 +37,7 @@ function processInventoryOperation(operationData) {
         operationTypeName: I18n.getOperationTypeName(operationData.operation),
         warehouseName: I18n.getWarehouseName(operationData.warehouse)
     };
-    
+
     LocalStorageAPI.addOperationLog(operationLogData, userName);
 
     // Update inventory data based on operation type
@@ -83,7 +83,7 @@ function processInventoryOperation(operationData) {
                 warehouseItems[existingItemIndex].quantity += operationData.itemQuantity;
 
                 // Check if quantity is no longer low
-                if (warehouseItems[existingItemIndex].quantity > MIN_STOCK_LEVEL && 
+                if (warehouseItems[existingItemIndex].quantity > MIN_STOCK_LEVEL &&
                     warehouseItems[existingItemIndex].status === 'منخفض') {
                     warehouseItems[existingItemIndex].status = 'متوفر';
                 }
@@ -126,7 +126,7 @@ function processInventoryOperation(operationData) {
 
     // Save updated inventory data
     LocalStorageAPI.saveInventoryData(inventoryData);
-    
+
     return true;
 }
 
@@ -166,17 +166,17 @@ function calculateDashboardStats() {
  */
 function filterInventoryData(warehouseType, searchTerm = '') {
     const inventoryData = LocalStorageAPI.getInventoryData();
-    
+
     if (!inventoryData || !inventoryData[warehouseType]) {
         return [];
     }
-    
+
     const items = inventoryData[warehouseType];
-    
+
     if (!searchTerm) {
         return items;
     }
-    
+
     // Filter by search term
     const lowerSearchTerm = searchTerm.toLowerCase();
     return items.filter(item =>

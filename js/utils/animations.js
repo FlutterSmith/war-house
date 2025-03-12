@@ -135,13 +135,13 @@ function updateStatWithAnimation(element, newValue, duration = 1000) {
     const currentValue = parseInt(element.textContent) || 0;
     const difference = newValue - currentValue;
     const increment = difference / (duration / 16); // 60fps
-    
+
     let currentCount = currentValue;
     const counter = setInterval(() => {
         currentCount += increment;
-        
+
         // Check if we've reached the target
-        if ((increment > 0 && currentCount >= newValue) || 
+        if ((increment > 0 && currentCount >= newValue) ||
             (increment < 0 && currentCount <= newValue)) {
             clearInterval(counter);
             element.textContent = newValue;
@@ -156,7 +156,7 @@ function updateStatWithAnimation(element, newValue, duration = 1000) {
  */
 function fixIconDisplay() {
     const menuIcons = document.querySelectorAll('.icon-wrapper img');
-    
+
     menuIcons.forEach(icon => {
         icon.style.display = 'block';
 
