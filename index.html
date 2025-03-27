@@ -32,6 +32,12 @@
                     <span>EN</span>
                 </button>
             </div>
+            <div class="theme-switcher">
+                <button id="themeToggle" class="theme-btn" aria-label="Toggle theme">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
             <div class="user-role-selector">
                 <select id="userRoleSelector">
                     <option value="dean">صلاحية عميد الكلية</option>
@@ -660,6 +666,11 @@
                 // Toggle classes if needed
                 document.body.classList.toggle('ltr-layout');
                 document.body.classList.toggle('rtl-layout');
+            });
+
+            // Theme switcher
+            document.getElementById('themeToggle').addEventListener('click', function () {
+                document.body.classList.toggle('dark-mode');
             });
 
             // Handle logout
