@@ -419,32 +419,36 @@
                     loginButton.classList.add('loading');
                     loginButton.disabled = true;
 
-                    // Use our Auth module to authenticate
-                    setTimeout(() => {
-                        const username = usernameInput.value.trim();
-                        const password = passwordInput.value.trim();
-                        const role = selectedRole.value;
+                    const username = usernameInput.value.trim();
+                    const password = passwordInput.value.trim();
+                    const role = selectedRole.value;
 
-                        // Call the authenticate method
-                        const authResult = Auth.authenticate(username, password, role);
+                    // Use our Auth module to authenticate asynchronously
+                    Auth.authenticate(username, password, role)
+                        .then(authResult => {
+                            if (authResult.success) {
+                                // Show success message
+                                showToast(authResult.message, 'success');
 
-                        if (authResult.success) {
-                            // Show success message
-                            showToast(authResult.message, 'success');
-
-                            // Redirect to dashboard
-                            setTimeout(() => {
-                                window.location.href = 'index.html';
-                            }, 1000);
-                        } else {
-                            // Show error message
-                            showToast(authResult.message, 'error');
+                                // Redirect to dashboard
+                                setTimeout(() => {
+                                    window.location.href = 'index.html';
+                                }, 1000);
+                            } else {
+                                // Show error message
+                                showToast(authResult.message, 'error');
+                                loginButton.classList.remove('loading');
+                                loginButton.disabled = false;
+                                loginForm.classList.add('shake');
+                                setTimeout(() => loginForm.classList.remove('shake'), 600);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Authentication error:', error);
+                            showToast('حدث خطأ في عملية تسجيل الدخول', 'error');
                             loginButton.classList.remove('loading');
                             loginButton.disabled = false;
-                            loginForm.classList.add('shake');
-                            setTimeout(() => loginForm.classList.remove('shake'), 600);
-                        }
-                    }, 1000);
+                        });
                 }
             });
 
