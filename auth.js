@@ -3,66 +3,25 @@
  * Provides authentication functionality for the warehouse management system.
  */
 
-// Import bcrypt for password hashing
-import bcrypt from 'bcryptjs';
-
-// Salt rounds for bcrypt hashing
-const SALT_ROUNDS = 10;
-
 // Mock user data - in a real application, this would be stored in a database
 const USERS = {
-    'admin': { 
-        password: '$2a$10$3jnXdQPKZF9L7fc9dTR7UuMFKJveAo8xMVNFL.hi8vEi4qLcvUryS', // admin123 hashed
-        name: 'المسؤول', 
-        role: 'dean' 
-    },
-    'director': { 
-        password: '$2a$10$QoLxmpX7b8dkytWo1nBYhOQwayXlSNzxgEqjLQgp0iOSO.mSJev0K', // dir123 hashed
-        name: 'مدير الكلية', 
-        role: 'director' 
-    },
-    'store': { 
-        password: '$2a$10$pP/ntpuNFE50Vsq3qJHSq.JQn0JkDFUU5VCTGV.U1LoWVIjZQEBM2', // store123 hashed 
-        name: 'خالد محمد', 
-        role: 'storekeeper' 
-    },
-    'staff': { 
-        password: '$2a$10$8vX8VZozPbJfIBtn26bVSO1qJr0K9hLF4YGtLftOEIx2HK0vV4Aby', // staff123 hashed
-        name: 'أحمد علي', 
-        role: 'staff' 
-    }
+    'admin': { password: 'admin123', name: 'المسؤول', role: 'dean' },
+    'director': { password: 'dir123', name: 'مدير الكلية', role: 'director' },
+    'store': { password: 'store123', name: 'خالد محمد', role: 'storekeeper' },
+    'staff': { password: 'staff123', name: 'أحمد علي', role: 'staff' }
 };
 
 // Session expiry time in milliseconds (8 hours)
 const SESSION_EXPIRY = 8 * 60 * 60 * 1000;
 
 /**
- * Hash a password with bcrypt
- * @param {string} password - Plain text password to hash
- * @returns {Promise<string>} Hashed password
- */
-async function hashPassword(password) {
-    return bcrypt.hash(password, SALT_ROUNDS);
-}
-
-/**
- * Compare a plain text password with a hashed password
- * @param {string} plainPassword - The plain text password
- * @param {string} hashedPassword - The hashed password to compare against
- * @returns {Promise<boolean>} Whether the passwords match
- */
-async function comparePassword(plainPassword, hashedPassword) {
-    return bcrypt.compare(plainPassword, hashedPassword);
-}
-
-/**
  * Authenticate a user with username and password
  * @param {string} username - The username
  * @param {string} password - The password
  * @param {string} role - The selected role
- * @returns {Promise<Object>} Authentication result with status and user data if successful
+ * @returns {Object} Authentication result with status and user data if successful
  */
-async function authenticate(username, password, role) {
+function authenticate(username, password, role) {
     if (!username || !password || !role) {
         return { success: false, message: 'يجب إدخال اسم المستخدم وكلمة المرور والصلاحية' };
     }
@@ -73,9 +32,7 @@ async function authenticate(username, password, role) {
         return { success: false, message: 'اسم المستخدم غير موجود' };
     }
 
-    // Compare passwords using bcrypt
-    const passwordMatch = await comparePassword(password, user.password);
-    if (!passwordMatch) {
+    if (user.password !== password) {
         return { success: false, message: 'كلمة المرور غير صحيحة' };
     }
 
@@ -201,9 +158,9 @@ function getCurrentUser() {
  * @param {string} username - The username
  * @param {string} currentPassword - The current password
  * @param {string} newPassword - The new password
- * @returns {Promise<Object>} Result with success status and message
+ * @returns {Object} Result with success status and message
  */
-async function changePassword(username, currentPassword, newPassword) {
+function changePassword(username, currentPassword, newPassword) {
     if (!username || !currentPassword || !newPassword) {
         return { success: false, message: 'جميع الحقول مطلوبة' };
     }
@@ -214,17 +171,12 @@ async function changePassword(username, currentPassword, newPassword) {
         return { success: false, message: 'المستخدم غير موجود' };
     }
 
-    // Compare current password using bcrypt
-    const passwordMatch = await comparePassword(currentPassword, user.password);
-    if (!passwordMatch) {
+    if (user.password !== currentPassword) {
         return { success: false, message: 'كلمة المرور الحالية غير صحيحة' };
     }
 
-    // Hash the new password before storing
-    const hashedPassword = await hashPassword(newPassword);
-    
     // In a real app, this would update the password in a database
-    USERS[username].password = hashedPassword;
+    USERS[username].password = newPassword;
 
     return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
 }
@@ -266,9 +218,7 @@ const Auth = {
     logout,
     getCurrentUser,
     changePassword,
-    hasPermission,
-    hashPassword,     // Export for use in user management
-    comparePassword   // Export for use in user management
+    hasPermission
 };
 
 // Support both older browsers and module imports
