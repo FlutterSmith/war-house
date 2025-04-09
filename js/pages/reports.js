@@ -18,13 +18,13 @@ let currentChart = null;
 function initialize() {
     // Set up report type selector
     setupReportTypeSelector();
-    
+
     // Set up report generation button
     setupGenerateReportButton();
-    
+
     // Set up export and print buttons
     setupExportButtons();
-    
+
     // Generate default report (inventory status)
     generateReport('inventory-status', 'all');
 }
@@ -34,14 +34,14 @@ function initialize() {
  */
 function setupReportTypeSelector() {
     const reportTypeSelector = document.getElementById('report-type');
-    
+
     if (reportTypeSelector) {
         reportTypeSelector.addEventListener('change', () => {
             const reportType = reportTypeSelector.value;
-            
+
             // Show/hide date inputs based on report type
             toggleDateInputs(reportType);
-            
+
             // Update report title
             updateReportTitle(reportType);
         });
@@ -54,7 +54,7 @@ function setupReportTypeSelector() {
  */
 function toggleDateInputs(reportType) {
     const dateRangeContainer = document.querySelector('.date-range');
-    
+
     if (dateRangeContainer) {
         if (reportType === 'inventory-status' || reportType === 'low-stock') {
             dateRangeContainer.classList.add('hidden');
@@ -71,7 +71,7 @@ function toggleDateInputs(reportType) {
 function updateReportTitle(reportType) {
     const titleElement = document.getElementById('report-title');
     const warehouseFilter = document.getElementById('warehouse-filter');
-    
+
     if (titleElement && warehouseFilter) {
         const warehouseType = warehouseFilter.value;
         const title = I18n.getReportTitle(reportType, warehouseType);
@@ -84,14 +84,14 @@ function updateReportTitle(reportType) {
  */
 function setupGenerateReportButton() {
     const generateButton = document.getElementById('generate-report');
-    
+
     if (generateButton) {
         generateButton.addEventListener('click', () => {
             const reportType = document.getElementById('report-type').value;
             const warehouseType = document.getElementById('warehouse-filter').value;
             const dateFrom = document.getElementById('date-from').value;
             const dateTo = document.getElementById('date-to').value;
-            
+
             generateReport(reportType, warehouseType, dateFrom, dateTo);
         });
     }
@@ -108,7 +108,7 @@ function setupExportButtons() {
             exportReportToPDF();
         });
     }
-    
+
     // Print report button
     const printButton = document.getElementById('print-report');
     if (printButton) {
@@ -128,16 +128,16 @@ function setupExportButtons() {
 function generateReport(reportType, warehouseType, dateFrom = '', dateTo = '') {
     // Update report title
     updateReportTitle(reportType);
-    
+
     // Update report date
     const reportDateElement = document.getElementById('report-date');
     if (reportDateElement) {
         reportDateElement.textContent = 'التاريخ: ' + DateFormatter.formatDateShort(new Date());
     }
-    
+
     // Generate report based on type
     let reportData;
-    
+
     switch (reportType) {
         case 'inventory-status':
             reportData = ReportsService.generateInventoryStatusReport(warehouseType);
@@ -156,7 +156,7 @@ function generateReport(reportType, warehouseType, dateFrom = '', dateTo = '') {
             renderLowStockReport(reportData);
             break;
     }
-    
+
     // Show success toast
     Toast.showToast('تم توليد التقرير بنجاح', 'success');
 }
@@ -167,13 +167,13 @@ function generateReport(reportType, warehouseType, dateFrom = '', dateTo = '') {
  */
 function renderInventoryStatusReport(reportData) {
     // Create chart
-    createChart('doughnut', 
-        reportData.labels, 
-        reportData.data, 
+    createChart('doughnut',
+        reportData.labels,
+        reportData.data,
         'توزيع الأصناف حسب المخازن',
         reportData.colors
     );
-    
+
     // Create summary
     const summaryHTML = `
         <h4>ملخص التقرير</h4>
@@ -196,7 +196,7 @@ function renderInventoryStatusReport(reportData) {
             </div>
         </div>
     `;
-    
+
     renderReportSummary(summaryHTML);
 }
 
@@ -206,13 +206,13 @@ function renderInventoryStatusReport(reportData) {
  */
 function renderOperationsSummaryReport(reportData) {
     // Create chart
-    createChart('bar', 
-        reportData.labels, 
-        reportData.data, 
+    createChart('bar',
+        reportData.labels,
+        reportData.data,
         'ملخص العمليات حسب النوع',
         reportData.colors
     );
-    
+
     // Create summary
     const summaryHTML = `
         <h4>ملخص التقرير</h4>
@@ -231,7 +231,7 @@ function renderOperationsSummaryReport(reportData) {
             </div>
         </div>
     `;
-    
+
     renderReportSummary(summaryHTML);
 }
 
@@ -241,13 +241,13 @@ function renderOperationsSummaryReport(reportData) {
  */
 function renderItemMovementReport(reportData) {
     // Create chart
-    createChart('horizontalBar', 
-        reportData.labels, 
-        reportData.data, 
+    createChart('horizontalBar',
+        reportData.labels,
+        reportData.data,
         'حركة الأصناف (الأكثر تداولاً)',
         reportData.colors
     );
-    
+
     // Create summary
     const summaryHTML = `
         <h4>ملخص التقرير</h4>
@@ -266,7 +266,7 @@ function renderItemMovementReport(reportData) {
             </div>
         </div>
     `;
-    
+
     renderReportSummary(summaryHTML);
 }
 
@@ -276,13 +276,13 @@ function renderItemMovementReport(reportData) {
  */
 function renderLowStockReport(reportData) {
     // Create chart
-    createChart('horizontalBar', 
-        reportData.labels, 
-        reportData.data, 
+    createChart('horizontalBar',
+        reportData.labels,
+        reportData.data,
         'الأصناف منخفضة المخزون',
         reportData.colors
     );
-    
+
     // Create summary
     const summaryHTML = `
         <h4>ملخص التقرير</h4>
@@ -305,7 +305,7 @@ function renderLowStockReport(reportData) {
             </div>
         </div>
     `;
-    
+
     renderReportSummary(summaryHTML);
 }
 
@@ -320,7 +320,7 @@ function renderLowStockReport(reportData) {
 function createChart(type, labels, data, title, colors) {
     const chartContainer = document.getElementById('report-chart-container');
     const chartCanvas = document.getElementById('report-chart');
-    
+
     if (chartContainer && chartCanvas) {
         // Mock Chart.js implementation - in a real application, you would use Chart.js
         chartContainer.innerHTML = '';
@@ -360,14 +360,14 @@ function createChartVisualization(type, labels, data, colors) {
  */
 function createPieChartVisualization(labels, data, colors) {
     const total = data.reduce((sum, val) => sum + val, 0) || 1; // Avoid division by zero
-    
+
     let segments = '';
     let legend = '';
-    
+
     for (let i = 0; i < labels.length; i++) {
         const percentage = ((data[i] / total) * 100).toFixed(1);
         const color = colors[i % colors.length];
-        
+
         segments += `
             <div class="pie-segment" style="
                 --percentage: ${percentage}%;
@@ -375,7 +375,7 @@ function createPieChartVisualization(labels, data, colors) {
                 --index: ${i};
             "></div>
         `;
-        
+
         legend += `
             <div class="legend-item">
                 <span class="legend-color" style="background-color: ${color}"></span>
@@ -384,7 +384,7 @@ function createPieChartVisualization(labels, data, colors) {
             </div>
         `;
     }
-    
+
     return `
         <div class="pie-chart-container">
             <div class="pie-chart">
@@ -408,13 +408,13 @@ function createPieChartVisualization(labels, data, colors) {
  */
 function createBarChartVisualization(labels, data, colors, horizontal = false) {
     const maxValue = Math.max(...data, 1); // Avoid division by zero
-    
+
     let bars = '';
-    
+
     for (let i = 0; i < labels.length; i++) {
         const percentage = ((data[i] / maxValue) * 100).toFixed(1);
         const color = colors[i % colors.length];
-        
+
         bars += `
             <div class="bar-item">
                 <div class="bar-label">${labels[i]}</div>
@@ -428,7 +428,7 @@ function createBarChartVisualization(labels, data, colors, horizontal = false) {
             </div>
         `;
     }
-    
+
     return `
         <div class="bar-chart-container ${horizontal ? 'horizontal' : 'vertical'}">
             ${bars}
@@ -442,7 +442,7 @@ function createBarChartVisualization(labels, data, colors, horizontal = false) {
  */
 function renderReportSummary(summaryHTML) {
     const summaryContainer = document.getElementById('report-summary');
-    
+
     if (summaryContainer) {
         summaryContainer.innerHTML = summaryHTML;
     }
@@ -454,7 +454,7 @@ function renderReportSummary(summaryHTML) {
 function exportReportToPDF() {
     // Mock PDF export functionality
     Toast.showToast('جارٍ تصدير التقرير كملف PDF...', 'info');
-    
+
     // Simulate processing delay
     setTimeout(() => {
         Modal.showModal('تصدير التقرير', `
@@ -478,7 +478,7 @@ function exportReportToPDF() {
 function printReport() {
     // Mock print functionality
     Toast.showToast('جارٍ إرسال التقرير إلى الطابعة...', 'info');
-    
+
     // Simulate processing delay
     setTimeout(() => {
         Toast.showToast('تم إرسال التقرير إلى الطابعة بنجاح', 'success');

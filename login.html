@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
+
 <body class="login-page">
     <div class="login-container">
         <div class="login-card">
@@ -15,7 +17,7 @@
                 <h1>نظام إدارة المخازن</h1>
                 <p>يرجى تسجيل الدخول للوصول إلى النظام</p>
             </div>
-            
+
             <form id="loginForm" class="login-form">
                 <div class="form-row">
                     <label for="username">اسم المستخدم</label>
@@ -26,7 +28,7 @@
                         <input type="text" id="username" name="username" required>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <label for="password">كلمة المرور</label>
                     <div class="input-group">
@@ -55,7 +57,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="form-row remember-me">
                     <label class="checkbox-container">
                         تذكرني
@@ -64,7 +66,7 @@
                     </label>
                     <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
                 </div>
-                
+
                 <button type="submit" class="login-btn">
                     <span>تسجيل الدخول</span>
                     <i class="fas fa-sign-in-alt"></i>
@@ -73,7 +75,7 @@
                 <div class="error-message" id="loginError" style="display: none;"></div>
             </form>
         </div>
-        
+
         <div class="login-footer">
             <p>© 2025 نظام إدارة المخازن - جميع الحقوق محفوظة</p>
         </div>
@@ -82,13 +84,13 @@
     <!-- Import auth script directly -->
     <script type="module">
         import Auth from './js/auth/auth.js';
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             // Check if user is already logged in
             if (Auth.isAuthenticated()) {
                 window.location.href = 'index.html';
             }
-        
+
             // Initialize and set up login form
             const loginForm = document.getElementById('loginForm');
             const usernameInput = document.getElementById('username');
@@ -96,10 +98,10 @@
             const roleInput = document.getElementById('role');
             const togglePasswordBtn = document.getElementById('togglePassword');
             const loginError = document.getElementById('loginError');
-            
+
             // Set focus to username input
             usernameInput.focus();
-            
+
             // Toggle password visibility
             togglePasswordBtn.addEventListener('click', () => {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -107,25 +109,25 @@
                 togglePasswordBtn.querySelector('i').classList.toggle('fa-eye');
                 togglePasswordBtn.querySelector('i').classList.toggle('fa-eye-slash');
             });
-            
+
             // Handle form submission
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                
+
                 // Get form values
                 const username = usernameInput.value.trim();
                 const password = passwordInput.value;
                 const role = roleInput.value;
-                
+
                 // Validate inputs
                 if (!username || !password || !role) {
                     showLoginError('يرجى إدخال جميع البيانات المطلوبة');
                     return;
                 }
-                
+
                 // Attempt to authenticate
                 const result = Auth.authenticate(username, password, role);
-                
+
                 if (result.success) {
                     // Redirect to dashboard
                     window.location.href = 'index.html';
@@ -133,12 +135,12 @@
                     showLoginError(result.message);
                 }
             });
-            
+
             // Function to show login error
             function showLoginError(message) {
                 loginError.textContent = message;
                 loginError.style.display = 'block';
-                
+
                 // Add shake animation to login form
                 loginForm.classList.add('shake');
                 setTimeout(() => {
@@ -148,4 +150,5 @@
         });
     </script>
 </body>
+
 </html>
