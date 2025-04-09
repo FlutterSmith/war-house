@@ -55,10 +55,10 @@ function applyPermissions(role) {
  * @param {string} role - The user role
  */
 function showRoleChangeNotification(role) {
-    const roleDisplayName = Auth.getCurrentUser()?.role === role 
+    const roleDisplayName = Auth.getCurrentUser()?.role === role
         ? 'صلاحياتك الحالية'
         : 'الصلاحيات المعروضة حالياً';
-    
+
     const notificationEl = document.createElement('div');
     notificationEl.className = 'role-notification';
     notificationEl.innerHTML = `
