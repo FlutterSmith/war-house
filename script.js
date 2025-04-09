@@ -418,25 +418,136 @@ function setupSectionNavigation() {
 
 // Function to show a specific section and hide others
 function showSection(sectionId) {
-    // Hide all sections
+    // Get the current active section before hiding
+    const currentSection = document.querySelector('main section:not(.hidden)');
+    const currentSectionId = currentSection ? currentSection.id : null;
+
+    // Store any form data or state from the current section if needed
+    if (currentSectionId) {
+        saveCurrentSectionState(currentSectionId);
+    }
+
+    // Hide all sections with fade-out animation
     document.querySelectorAll('main section').forEach(section => {
-        section.classList.add('hidden');
+        if (!section.classList.contains('hidden')) {
+            // Fade out current section
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(-10px)';
+
+            // After animation completes, hide the section
+            setTimeout(() => {
+                section.classList.add('hidden');
+            }, 300);
+        } else {
+            // Immediately hide already hidden sections
+            section.classList.add('hidden');
+        }
     });
 
-    // Show the selected section
+    // Show the selected section with animation
     const sectionToShow = document.getElementById(sectionId);
     if (sectionToShow) {
-        sectionToShow.classList.remove('hidden');
-
-        // Animate the section entry
-        sectionToShow.style.opacity = '0';
-        sectionToShow.style.transform = 'translateY(20px)';
-
+        // Allow time for the fade-out to complete
         setTimeout(() => {
+            // Make section visible but transparent for animation
+            sectionToShow.classList.remove('hidden');
+            sectionToShow.style.opacity = '0';
+            sectionToShow.style.transform = 'translateY(20px)';
             sectionToShow.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            sectionToShow.style.opacity = '1';
-            sectionToShow.style.transform = 'translateY(0)';
-        }, 50);
+
+            // Restore any saved state for this section
+            restoreSectionState(sectionId);
+
+            // Trigger animation after a small delay to ensure CSS transitions work
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    sectionToShow.style.opacity = '1';
+                    sectionToShow.style.transform = 'translateY(0)';
+                });
+            });
+        }, 300);
+    }
+}
+
+// Save current section state before navigating away
+function saveCurrentSectionState(sectionId) {
+    const sectionData = {};
+
+    // Save form values within the section
+    const formInputs = document.querySelectorAll(`#${sectionId} input, #${sectionId} select, #${sectionId} textarea`);
+    formInputs.forEach(input => {
+        if (input.id) {
+            sectionData[input.id] = input.value;
+        }
+    });
+
+    // Save active tabs or selected options in the section
+    const activeTabs = document.querySelectorAll(`#${sectionId} .warehouse-tab.active, #${sectionId} .operation-option.active`);
+    activeTabs.forEach(tab => {
+        const type = tab.classList.contains('warehouse-tab') ? 'warehouse' : 'operation';
+        sectionData[`active_${type}`] = tab.getAttribute(`data-${type}`);
+    });
+
+    // Save scroll position
+    sectionData.scrollPosition = document.getElementById(sectionId).scrollTop;
+
+    // Store in sessionStorage to persist during the session
+    sessionStorage.setItem(`section_state_${sectionId}`, JSON.stringify(sectionData));
+}
+
+// Restore section state when navigating to it
+function restoreSectionState(sectionId) {
+    const stateJSON = sessionStorage.getItem(`section_state_${sectionId}`);
+    if (!stateJSON) return;
+
+    try {
+        const state = JSON.parse(stateJSON);
+
+        // Restore form values
+        Object.keys(state).forEach(key => {
+            if (key !== 'scrollPosition' && !key.startsWith('active_')) {
+                const input = document.getElementById(key);
+                if (input) {
+                    input.value = state[key];
+                }
+            }
+        });
+
+        // Restore active tabs
+        if (state.active_warehouse) {
+            const tab = document.querySelector(`#${sectionId} .warehouse-tab[data-warehouse="${state.active_warehouse}"]`);
+            if (tab) {
+                document.querySelectorAll(`#${sectionId} .warehouse-tab`).forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Also restore associated data if necessary
+                const warehouseType = state.active_warehouse;
+                if (sectionId === 'inventory-section') {
+                    const inventoryData = JSON.parse(localStorage.getItem('inventoryData'));
+                    if (inventoryData) {
+                        loadInventoryData(warehouseType, inventoryData);
+                    }
+                }
+            }
+        }
+
+        if (state.active_operation) {
+            const operationOption = document.querySelector(`#${sectionId} .operation-option[data-operation="${state.active_operation}"]`);
+            if (operationOption) {
+                document.querySelectorAll(`#${sectionId} .operation-option`).forEach(op => op.classList.remove('active'));
+                operationOption.classList.add('active');
+            }
+        }
+
+        // Restore scroll position after a short delay to ensure elements are rendered
+        setTimeout(() => {
+            const section = document.getElementById(sectionId);
+            if (section && state.scrollPosition) {
+                section.scrollTop = state.scrollPosition;
+            }
+        }, 100);
+    } catch (error) {
+        console.error('Error restoring section state:', error);
     }
 }
 
@@ -975,7 +1086,13 @@ function setupInventoryData() {
 
 // Function to load inventory data for a specific warehouse
 function loadInventoryData(warehouseType, inventoryData) {
-    renderInventoryTable(inventoryData[warehouseType]);
+    // Check if the warehouse exists and has data
+    if (!inventoryData || !inventoryData[warehouseType]) {
+        // If warehouse doesn't exist, render an empty table
+        renderInventoryTable([]);
+    } else {
+        renderInventoryTable(inventoryData[warehouseType]);
+    }
 }
 
 // Function to render inventory data to the table
@@ -1436,27 +1553,48 @@ function initializeRippleEffect() {
 }
 
 function createRipple(event) {
+    if (!event) return;
+
     const button = event.currentTarget;
+
+    // Don't create ripple if element already has one
+    if (button.querySelector('.ripple')) {
+        const existingRipple = button.querySelector('.ripple');
+        existingRipple.remove();
+    }
+
     const ripple = document.createElement('span');
+
+    // Set position relative if not already set
+    const computedStyle = window.getComputedStyle(button);
+    if (computedStyle.position !== 'relative' && computedStyle.position !== 'absolute') {
+        button.style.position = 'relative';
+        button.style.overflow = 'hidden';
+    }
+
+    // Calculate ripple size and position
     const diameter = Math.max(button.clientWidth, button.clientHeight);
     const radius = diameter / 2;
 
     ripple.style.width = ripple.style.height = `${diameter}px`;
-    ripple.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
-    ripple.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+
+    // Handle both touch and mouse events
+    const rect = button.getBoundingClientRect();
+    const x = (event.clientX || event.touches[0].clientX) - rect.left;
+    const y = (event.clientY || event.touches[0].clientY) - rect.top;
+
+    ripple.style.left = `${x - radius}px`;
+    ripple.style.top = `${y - radius}px`;
     ripple.classList.add('ripple');
 
-    // Remove existing ripples
-    const existingRipple = button.querySelector('.ripple');
-    if (existingRipple) {
-        existingRipple.remove();
-    }
-
+    // Add ripple to button
     button.appendChild(ripple);
 
     // Remove ripple after animation completes
     setTimeout(() => {
-        ripple.remove();
+        if (ripple && ripple.parentNode === button) {
+            ripple.remove();
+        }
     }, 800);
 }
 
