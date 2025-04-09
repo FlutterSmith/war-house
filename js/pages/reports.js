@@ -1,12 +1,16 @@
 /**
  * Reports Page Module
- * Handles functionality for generating and displaying reports
+ * Handles functionality for the reports page
  */
 
 import ReportsService from '../services/reports-service.js';
-import I18n from '../utils/i18n.js';
 import Modal from '../components/modal.js';
 import Toast from '../components/toast.js';
+import DateFormatter from '../utils/date-formatter.js';
+import I18n from '../utils/i18n.js';
+
+// Store for chart instances to prevent memory leaks
+let currentChart = null;
 
 /**
  * Initialize the reports page
@@ -15,100 +19,63 @@ function initialize() {
     // Set up report type selector
     setupReportTypeSelector();
     
-    // Set up warehouse filter selector
-    setupWarehouseSelector();
-    
-    // Set up date range pickers
-    setupDateRangePickers();
-    
     // Set up report generation button
     setupGenerateReportButton();
     
-    // Set up export buttons
+    // Set up export and print buttons
     setupExportButtons();
     
-    // Initialize default report
-    const reportTypeSelect = document.getElementById('reportType');
-    if (reportTypeSelect) {
-        updateReportPreview(reportTypeSelect.value);
-    }
+    // Generate default report (inventory status)
+    generateReport('inventory-status', 'all');
 }
 
 /**
  * Set up report type selector
  */
 function setupReportTypeSelector() {
-    const reportTypeSelect = document.getElementById('reportType');
+    const reportTypeSelector = document.getElementById('report-type');
     
-    if (reportTypeSelect) {
-        reportTypeSelect.addEventListener('change', () => {
-            const reportType = reportTypeSelect.value;
+    if (reportTypeSelector) {
+        reportTypeSelector.addEventListener('change', () => {
+            const reportType = reportTypeSelector.value;
             
-            // Show/hide date range inputs based on report type
-            toggleDateFields(reportType);
+            // Show/hide date inputs based on report type
+            toggleDateInputs(reportType);
             
-            // Update report preview
-            updateReportPreview(reportType);
+            // Update report title
+            updateReportTitle(reportType);
         });
     }
 }
 
 /**
- * Set up warehouse filter selector
+ * Toggle date input visibility based on report type
+ * @param {string} reportType - The report type
  */
-function setupWarehouseSelector() {
-    const warehouseSelect = document.getElementById('reportWarehouse');
+function toggleDateInputs(reportType) {
+    const dateRangeContainer = document.querySelector('.date-range');
     
-    if (warehouseSelect) {
-        warehouseSelect.addEventListener('change', () => {
-            const reportType = document.getElementById('reportType').value;
-            updateReportPreview(reportType);
-        });
-    }
-}
-
-/**
- * Set up date range pickers
- */
-function setupDateRangePickers() {
-    const dateFrom = document.getElementById('dateFrom');
-    const dateTo = document.getElementById('dateTo');
-    
-    if (dateFrom && dateTo) {
-        // Set initial date values
-        const today = new Date();
-        const lastMonth = new Date();
-        lastMonth.setMonth(today.getMonth() - 1);
-        
-        dateFrom.valueAsDate = lastMonth;
-        dateTo.valueAsDate = today;
-        
-        // Update report when dates change
-        dateFrom.addEventListener('change', () => {
-            const reportType = document.getElementById('reportType').value;
-            updateReportPreview(reportType);
-        });
-        
-        dateTo.addEventListener('change', () => {
-            const reportType = document.getElementById('reportType').value;
-            updateReportPreview(reportType);
-        });
-    }
-}
-
-/**
- * Show or hide date fields based on report type
- * @param {string} reportType - The selected report type
- */
-function toggleDateFields(reportType) {
-    const dateFieldsContainer = document.querySelector('.date-fields');
-    
-    if (dateFieldsContainer) {
+    if (dateRangeContainer) {
         if (reportType === 'inventory-status' || reportType === 'low-stock') {
-            dateFieldsContainer.style.display = 'none';
+            dateRangeContainer.classList.add('hidden');
         } else {
-            dateFieldsContainer.style.display = 'flex';
+            dateRangeContainer.classList.remove('hidden');
         }
+    }
+}
+
+/**
+ * Update report title based on selected type
+ * @param {string} reportType - The report type
+ */
+function updateReportTitle(reportType) {
+    const titleElement = document.getElementById('report-title');
+    const warehouseFilter = document.getElementById('warehouse-filter');
+    
+    if (titleElement && warehouseFilter) {
+        const warehouseType = warehouseFilter.value;
+        const title = I18n.getReportTitle(reportType, warehouseType);
+        titleElement.textContent = title;
     }
 }
 
@@ -116,371 +83,411 @@ function toggleDateFields(reportType) {
  * Set up report generation button
  */
 function setupGenerateReportButton() {
-    const generateBtn = document.getElementById('generateReport');
+    const generateButton = document.getElementById('generate-report');
     
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            const reportType = document.getElementById('reportType').value;
-            updateReportPreview(reportType, true);
+    if (generateButton) {
+        generateButton.addEventListener('click', () => {
+            const reportType = document.getElementById('report-type').value;
+            const warehouseType = document.getElementById('warehouse-filter').value;
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
             
-            Toast.showToast('تم تحديث التقرير بنجاح', 'success');
+            generateReport(reportType, warehouseType, dateFrom, dateTo);
         });
     }
 }
 
 /**
- * Set up export buttons for reports
+ * Set up export and print buttons
  */
 function setupExportButtons() {
-    const exportPdfBtn = document.getElementById('exportPdf');
-    const exportExcelBtn = document.getElementById('exportExcel');
-    
-    if (exportPdfBtn) {
-        exportPdfBtn.addEventListener('click', () => {
-            exportReportToPdf();
+    // Export to PDF button
+    const exportButton = document.getElementById('export-report');
+    if (exportButton) {
+        exportButton.addEventListener('click', () => {
+            exportReportToPDF();
         });
     }
     
-    if (exportExcelBtn) {
-        exportExcelBtn.addEventListener('click', () => {
-            exportReportToExcel();
+    // Print report button
+    const printButton = document.getElementById('print-report');
+    if (printButton) {
+        printButton.addEventListener('click', () => {
+            printReport();
         });
     }
 }
 
 /**
- * Update the report preview based on selected options
- * @param {string} reportType - The type of report to generate
- * @param {boolean} forceRefresh - Whether to force a refresh of the report
+ * Generate a report based on selected options
+ * @param {string} reportType - The report type
+ * @param {string} warehouseType - The warehouse type
+ * @param {string} dateFrom - Start date (optional)
+ * @param {string} dateTo - End date (optional)
  */
-function updateReportPreview(reportType, forceRefresh = false) {
-    // Get report parameters
-    const warehouseType = document.getElementById('reportWarehouse').value;
-    const dateFrom = document.getElementById('dateFrom')?.value;
-    const dateTo = document.getElementById('dateTo')?.value;
-    
+function generateReport(reportType, warehouseType, dateFrom = '', dateTo = '') {
     // Update report title
-    updateReportTitle(reportType, warehouseType);
+    updateReportTitle(reportType);
     
-    // Get report data based on type
+    // Update report date
+    const reportDateElement = document.getElementById('report-date');
+    if (reportDateElement) {
+        reportDateElement.textContent = 'التاريخ: ' + DateFormatter.formatDateShort(new Date());
+    }
+    
+    // Generate report based on type
     let reportData;
+    
     switch (reportType) {
         case 'inventory-status':
             reportData = ReportsService.generateInventoryStatusReport(warehouseType);
+            renderInventoryStatusReport(reportData);
             break;
         case 'operations-summary':
             reportData = ReportsService.generateOperationsSummaryReport(dateFrom, dateTo, warehouseType);
+            renderOperationsSummaryReport(reportData);
             break;
         case 'item-movement':
             reportData = ReportsService.generateItemMovementReport(dateFrom, dateTo, warehouseType);
+            renderItemMovementReport(reportData);
             break;
         case 'low-stock':
             reportData = ReportsService.generateLowStockReport(warehouseType);
+            renderLowStockReport(reportData);
             break;
     }
     
-    // Update report statistics
-    updateReportStatistics(reportType, reportData);
+    // Show success toast
+    Toast.showToast('تم توليد التقرير بنجاح', 'success');
+}
+
+/**
+ * Render inventory status report
+ * @param {Object} reportData - The report data
+ */
+function renderInventoryStatusReport(reportData) {
+    // Create chart
+    createChart('doughnut', 
+        reportData.labels, 
+        reportData.data, 
+        'توزيع الأصناف حسب المخازن',
+        reportData.colors
+    );
     
-    // Update report chart
-    updateReportChart(reportType, reportData);
+    // Create summary
+    const summaryHTML = `
+        <h4>ملخص التقرير</h4>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <span class="stat-label">عدد الأصناف الإجمالي:</span>
+                <span class="stat-value">${reportData.totalItems}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">القيمة التقديرية:</span>
+                <span class="stat-value">${reportData.estimatedValue.toLocaleString()} ر.س</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">أصناف منخفضة المخزون:</span>
+                <span class="stat-value">${reportData.lowStockItems}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">آخر تحديث:</span>
+                <span class="stat-value">${reportData.lastUpdate}</span>
+            </div>
+        </div>
+    `;
     
-    // Update report date
-    const reportDateElement = document.querySelector('.report-date');
-    if (reportDateElement) {
-        reportDateElement.textContent = new Date().toLocaleDateString('ar-SA');
+    renderReportSummary(summaryHTML);
+}
+
+/**
+ * Render operations summary report
+ * @param {Object} reportData - The report data
+ */
+function renderOperationsSummaryReport(reportData) {
+    // Create chart
+    createChart('bar', 
+        reportData.labels, 
+        reportData.data, 
+        'ملخص العمليات حسب النوع',
+        reportData.colors
+    );
+    
+    // Create summary
+    const summaryHTML = `
+        <h4>ملخص التقرير</h4>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <span class="stat-label">عدد العمليات الإجمالي:</span>
+                <span class="stat-value">${reportData.totalOperations}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">آخر عملية:</span>
+                <span class="stat-value">${reportData.lastOperation || 'لا يوجد'}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">العملية الأكثر تكراراً:</span>
+                <span class="stat-value">${reportData.mostCommonOperation || 'لا يوجد'}</span>
+            </div>
+        </div>
+    `;
+    
+    renderReportSummary(summaryHTML);
+}
+
+/**
+ * Render item movement report
+ * @param {Object} reportData - The report data
+ */
+function renderItemMovementReport(reportData) {
+    // Create chart
+    createChart('horizontalBar', 
+        reportData.labels, 
+        reportData.data, 
+        'حركة الأصناف (الأكثر تداولاً)',
+        reportData.colors
+    );
+    
+    // Create summary
+    const summaryHTML = `
+        <h4>ملخص التقرير</h4>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <span class="stat-label">عدد العمليات الإجمالي:</span>
+                <span class="stat-value">${reportData.totalMovements}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">الصنف الأكثر تداولاً:</span>
+                <span class="stat-value">${reportData.mostMovedItem || 'لا يوجد'}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">آخر عملية:</span>
+                <span class="stat-value">${reportData.lastMovement || 'لا يوجد'}</span>
+            </div>
+        </div>
+    `;
+    
+    renderReportSummary(summaryHTML);
+}
+
+/**
+ * Render low stock report
+ * @param {Object} reportData - The report data
+ */
+function renderLowStockReport(reportData) {
+    // Create chart
+    createChart('horizontalBar', 
+        reportData.labels, 
+        reportData.data, 
+        'الأصناف منخفضة المخزون',
+        reportData.colors
+    );
+    
+    // Create summary
+    const summaryHTML = `
+        <h4>ملخص التقرير</h4>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <span class="stat-label">عدد الأصناف منخفضة المخزون:</span>
+                <span class="stat-value">${reportData.totalItems}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">أصناف تحتاج تنبيه:</span>
+                <span class="stat-value">${reportData.warningItems}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">أصناف نفذت من المخزون:</span>
+                <span class="stat-value">${reportData.criticalItems}</span>
+            </div>
+            <div class="summary-stat">
+                <span class="stat-label">آخر تحديث:</span>
+                <span class="stat-value">${reportData.lastUpdate}</span>
+            </div>
+        </div>
+    `;
+    
+    renderReportSummary(summaryHTML);
+}
+
+/**
+ * Create a chart using Chart.js (mock implementation)
+ * @param {string} type - The chart type
+ * @param {Array} labels - The chart labels
+ * @param {Array} data - The chart data
+ * @param {string} title - The chart title
+ * @param {Array} colors - The chart colors
+ */
+function createChart(type, labels, data, title, colors) {
+    const chartContainer = document.getElementById('report-chart-container');
+    const chartCanvas = document.getElementById('report-chart');
+    
+    if (chartContainer && chartCanvas) {
+        // Mock Chart.js implementation - in a real application, you would use Chart.js
+        chartContainer.innerHTML = '';
+        chartContainer.innerHTML = `
+            <div class="chart-mockup">
+                <h4>${title}</h4>
+                <div class="chart-visualization ${type}-chart">
+                    ${createChartVisualization(type, labels, data, colors)}
+                </div>
+            </div>
+        `;
     }
 }
 
 /**
- * Update the report title
- * @param {string} reportType - The type of report
- * @param {string} warehouseType - The warehouse type
+ * Create a simple chart visualization (mock)
+ * @param {string} type - The chart type
+ * @param {Array} labels - The chart labels
+ * @param {Array} data - The chart data
+ * @param {Array} colors - The chart colors
+ * @returns {string} HTML representation of the chart
  */
-function updateReportTitle(reportType, warehouseType) {
-    const titleElement = document.querySelector('.report-title');
-    
-    if (titleElement) {
-        titleElement.textContent = I18n.getReportTitle(reportType, warehouseType);
-    }
-}
-
-/**
- * Update report statistics based on report data
- * @param {string} reportType - The type of report
- * @param {Object} data - The report data
- */
-function updateReportStatistics(reportType, data) {
-    const statsContainer = document.querySelector('.report-stats');
-    
-    if (!statsContainer) return;
-    
-    // Clear existing stats
-    statsContainer.innerHTML = '';
-    
-    // Create stats based on report type
-    switch (reportType) {
-        case 'inventory-status':
-            statsContainer.innerHTML = `
-                <div class="stat-item">
-                    <span class="stat-value">${data.totalItems}</span>
-                    <span class="stat-label">إجمالي الأصناف</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.lowStockItems}</span>
-                    <span class="stat-label">أصناف منخفضة المخزون</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.estimatedValue.toLocaleString()}</span>
-                    <span class="stat-label">القيمة التقديرية</span>
-                </div>
-            `;
-            break;
-            
-        case 'operations-summary':
-            statsContainer.innerHTML = `
-                <div class="stat-item">
-                    <span class="stat-value">${data.totalOperations}</span>
-                    <span class="stat-label">إجمالي العمليات</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.mostCommonOperation || '-'}</span>
-                    <span class="stat-label">العملية الأكثر تكرارًا</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.lastOperation || '-'}</span>
-                    <span class="stat-label">آخر عملية</span>
-                </div>
-            `;
-            break;
-            
-        case 'item-movement':
-            statsContainer.innerHTML = `
-                <div class="stat-item">
-                    <span class="stat-value">${data.totalMovements}</span>
-                    <span class="stat-label">إجمالي الحركات</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.mostMovedItem || '-'}</span>
-                    <span class="stat-label">الصنف الأكثر حركة</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.lastMovement || '-'}</span>
-                    <span class="stat-label">آخر حركة</span>
-                </div>
-            `;
-            break;
-            
-        case 'low-stock':
-            statsContainer.innerHTML = `
-                <div class="stat-item">
-                    <span class="stat-value">${data.totalItems}</span>
-                    <span class="stat-label">إجمالي الأصناف منخفضة المخزون</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.warningItems}</span>
-                    <span class="stat-label">أصناف تحتاج للتجديد</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${data.criticalItems}</span>
-                    <span class="stat-label">أصناف نفذت بالكامل</span>
-                </div>
-            `;
-            break;
-    }
-}
-
-/**
- * Update the report chart with the given data
- * @param {string} reportType - The type of report
- * @param {Object} data - The report data
- */
-function updateReportChart(reportType, data) {
-    const chartContainer = document.querySelector('.report-chart');
-    
-    if (!chartContainer) return;
-    
-    // Clear existing chart
-    chartContainer.innerHTML = '';
-    
-    // If chart library is available, create chart
-    if (typeof Chart !== 'undefined') {
-        // Create canvas for chart
-        const canvas = document.createElement('canvas');
-        canvas.id = 'reportChart';
-        chartContainer.appendChild(canvas);
-        
-        // Create chart based on report type
-        let chartType, chartOptions;
-        
-        switch (reportType) {
-            case 'inventory-status':
-                chartType = 'pie';
-                chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false
-                };
-                break;
-                
-            case 'operations-summary':
-            case 'item-movement':
-                chartType = 'bar';
-                chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                };
-                break;
-                
-            case 'low-stock':
-                chartType = 'horizontalBar';
-                chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    scales: {
-                        x: {
-                            beginAtZero: true
-                        }
-                    }
-                };
-                break;
-        }
-        
-        // Create chart
-        new Chart(canvas.getContext('2d'), {
-            type: chartType,
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    label: 'البيانات',
-                    data: data.data,
-                    backgroundColor: data.colors,
-                    borderWidth: 1
-                }]
-            },
-            options: chartOptions
-        });
+function createChartVisualization(type, labels, data, colors) {
+    if (type === 'doughnut' || type === 'pie') {
+        return createPieChartVisualization(labels, data, colors);
     } else {
-        // Fallback to simple visualization if Chart.js is not available
-        createSimpleChart(chartContainer, data);
+        return createBarChartVisualization(labels, data, colors, type === 'horizontalBar');
     }
 }
 
 /**
- * Create a simple chart visualization without Chart.js
- * @param {HTMLElement} container - The container element
- * @param {Object} data - The chart data
+ * Create a pie/doughnut chart visualization (mock)
+ * @param {Array} labels - The chart labels
+ * @param {Array} data - The chart data
+ * @param {Array} colors - The chart colors
+ * @returns {string} HTML representation of the chart
  */
-function createSimpleChart(container, data) {
-    // Create simple bar chart using HTML/CSS
-    const chart = document.createElement('div');
-    chart.className = 'simple-chart';
+function createPieChartVisualization(labels, data, colors) {
+    const total = data.reduce((sum, val) => sum + val, 0) || 1; // Avoid division by zero
     
-    // Create bars for each data point
-    data.labels.forEach((label, index) => {
-        // Calculate bar height (50px to 200px range)
-        const maxValue = Math.max(...data.data);
-        const percent = (data.data[index] / maxValue) * 100;
-        const height = Math.max(50, (percent * 150 / 100) + 50);
-        
-        // Create bar element
-        const bar = document.createElement('div');
-        bar.className = 'simple-chart-bar';
-        bar.style.height = height + 'px';
-        bar.style.backgroundColor = data.colors[index % data.colors.length];
-        
-        // Add value label
-        const value = document.createElement('div');
-        value.className = 'simple-chart-value';
-        value.textContent = data.data[index];
-        
-        // Add name label
-        const name = document.createElement('div');
-        name.className = 'simple-chart-label';
-        name.textContent = label;
-        
-        // Assemble bar
-        bar.appendChild(value);
-        bar.appendChild(document.createElement('div')); // Spacer
-        
-        // Assemble chart
-        chart.appendChild(bar);
-        chart.appendChild(name);
-    });
+    let segments = '';
+    let legend = '';
     
-    // Add to container
-    container.appendChild(chart);
+    for (let i = 0; i < labels.length; i++) {
+        const percentage = ((data[i] / total) * 100).toFixed(1);
+        const color = colors[i % colors.length];
+        
+        segments += `
+            <div class="pie-segment" style="
+                --percentage: ${percentage}%;
+                --color: ${color};
+                --index: ${i};
+            "></div>
+        `;
+        
+        legend += `
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: ${color}"></span>
+                <span class="legend-label">${labels[i]}</span>
+                <span class="legend-value">${data[i]} (${percentage}%)</span>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="pie-chart-container">
+            <div class="pie-chart">
+                ${segments}
+                <div class="pie-center"></div>
+            </div>
+            <div class="chart-legend">
+                ${legend}
+            </div>
+        </div>
+    `;
 }
 
 /**
- * Export the current report to PDF
+ * Create a bar chart visualization (mock)
+ * @param {Array} labels - The chart labels
+ * @param {Array} data - The chart data
+ * @param {Array} colors - The chart colors
+ * @param {boolean} horizontal - Whether the bars should be horizontal
+ * @returns {string} HTML representation of the chart
  */
-function exportReportToPdf() {
-    // Check if jsPDF is available
-    if (typeof jsPDF !== 'undefined') {
-        // Get report title
-        const reportTitle = document.querySelector('.report-title').textContent;
+function createBarChartVisualization(labels, data, colors, horizontal = false) {
+    const maxValue = Math.max(...data, 1); // Avoid division by zero
+    
+    let bars = '';
+    
+    for (let i = 0; i < labels.length; i++) {
+        const percentage = ((data[i] / maxValue) * 100).toFixed(1);
+        const color = colors[i % colors.length];
         
-        // Create PDF instance
-        const pdf = new jsPDF();
-        
-        // Add title
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(16);
-        pdf.text(reportTitle, 105, 15, { align: 'center' });
-        
-        // Add date
-        const reportDate = document.querySelector('.report-date').textContent;
-        pdf.setFontSize(12);
-        pdf.text(`تاريخ التقرير: ${reportDate}`, 105, 25, { align: 'center' });
-        
-        // Add statistics
-        pdf.setFontSize(14);
-        pdf.text('إحصائيات التقرير:', 20, 40);
-        
-        // Get stats
-        const stats = document.querySelectorAll('.report-stats .stat-item');
-        let yPos = 50;
-        
-        stats.forEach(stat => {
-            const label = stat.querySelector('.stat-label').textContent;
-            const value = stat.querySelector('.stat-value').textContent;
-            pdf.text(`${label}: ${value}`, 30, yPos);
-            yPos += 10;
-        });
-        
-        // Save PDF
-        pdf.save(`${reportTitle}.pdf`);
-        
-        Toast.showToast('تم تصدير التقرير بصيغة PDF بنجاح', 'success');
-    } else {
-        Modal.showModal('تصدير PDF', `
-            <p>مكتبة jsPDF غير متوفرة. يرجى تحميلها لاستخدام هذه الخاصية.</p>
-            <p>يمكنك تحميلها من <a href="https://github.com/parallax/jsPDF" target="_blank">هنا</a>.</p>
-        `);
+        bars += `
+            <div class="bar-item">
+                <div class="bar-label">${labels[i]}</div>
+                <div class="bar-container">
+                    <div class="bar" style="
+                        ${horizontal ? 'width' : 'height'}: ${percentage}%;
+                        background-color: ${color};
+                    "></div>
+                    <div class="bar-value">${data[i]}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="bar-chart-container ${horizontal ? 'horizontal' : 'vertical'}">
+            ${bars}
+        </div>
+    `;
+}
+
+/**
+ * Render report summary
+ * @param {string} summaryHTML - The HTML for the summary
+ */
+function renderReportSummary(summaryHTML) {
+    const summaryContainer = document.getElementById('report-summary');
+    
+    if (summaryContainer) {
+        summaryContainer.innerHTML = summaryHTML;
     }
 }
 
 /**
- * Export the current report to Excel
+ * Export current report to PDF
  */
-function exportReportToExcel() {
-    Toast.showToast('جاري تصدير التقرير بصيغة Excel...', 'info');
+function exportReportToPDF() {
+    // Mock PDF export functionality
+    Toast.showToast('جارٍ تصدير التقرير كملف PDF...', 'info');
     
+    // Simulate processing delay
     setTimeout(() => {
-        Toast.showToast('تم تصدير التقرير بصيغة Excel بنجاح', 'success');
+        Modal.showModal('تصدير التقرير', `
+            <div class="export-success">
+                <i class="fas fa-file-pdf"></i>
+                <h3>تم تصدير التقرير بنجاح</h3>
+                <p>تم حفظ الملف في المسار الافتراضي للتنزيلات.</p>
+                <button class="btn-primary modal-close-btn">موافق</button>
+            </div>
+        `, (modal) => {
+            modal.querySelector('.modal-close-btn').addEventListener('click', () => {
+                Modal.closeModal(modal);
+            });
+        });
     }, 1500);
+}
+
+/**
+ * Print current report
+ */
+function printReport() {
+    // Mock print functionality
+    Toast.showToast('جارٍ إرسال التقرير إلى الطابعة...', 'info');
+    
+    // Simulate processing delay
+    setTimeout(() => {
+        Toast.showToast('تم إرسال التقرير إلى الطابعة بنجاح', 'success');
+    }, 1000);
 }
 
 // Export reports module
 const ReportsModule = {
-    initialize,
-    updateReportPreview
+    initialize
 };
 
 export default ReportsModule;
