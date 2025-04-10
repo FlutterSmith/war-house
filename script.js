@@ -921,25 +921,11 @@ function getOperationSuccessMessage(operation) {
 
 // Function to set up inventory data and search functionality
 function setupInventoryData() {
-    // Sample inventory data for each warehouse
-    const inventoryData = {
-        durable: [
-            { code: 'D001', name: 'جهاز حاسوب HP', quantity: 15, unit: 'جهاز', lastUpdate: '2025/04/05', status: 'متوفر' },
-            { code: 'D002', name: 'طابعة ليزر', quantity: 8, unit: 'جهاز', lastUpdate: '2025/04/01', status: 'متوفر' },
-            { code: 'D003', name: 'كرسي مكتبي', quantity: 25, unit: 'قطعة', lastUpdate: '2025/03/28', status: 'متوفر' },
-            { code: 'D004', name: 'مكتب خشبي', quantity: 12, unit: 'قطعة', lastUpdate: '2025/03/20', status: 'متوفر' }
-        ],
-        consumable: [
-            { code: 'C001', name: 'ورق تصوير A4', quantity: 150, unit: 'رزمة', lastUpdate: '2025/04/09', status: 'متوفر' },
-            { code: 'C002', name: 'أقلام حبر', quantity: 200, unit: 'قطعة', lastUpdate: '2025/04/07', status: 'متوفر' },
-            { code: 'C003', name: 'حبر طابعة أسود', quantity: 30, unit: 'عبوة', lastUpdate: '2025/04/02', status: 'منخفض' },
-            { code: 'C004', name: 'ملفات بلاستيكية', quantity: 300, unit: 'قطعة', lastUpdate: '2025/03/15', status: 'متوفر' }
-        ],
-        damaged: [
-            { code: 'X001', name: 'كراسي مكسورة', quantity: 8, unit: 'قطعة', lastUpdate: '2025/04/07', status: 'للإتلاف' },
-            { code: 'X002', name: 'أجهزة حاسوب معطلة', quantity: 3, unit: 'جهاز', lastUpdate: '2025/03/15', status: 'للإصلاح' },
-            { code: 'X003', name: 'طابعة معطلة', quantity: 2, unit: 'جهاز', lastUpdate: '2025/02/20', status: 'للإتلاف' }
-        ]
+    // Get inventory data from localStorage instead of using hardcoded data
+    const inventoryData = JSON.parse(localStorage.getItem('inventoryData')) || {
+        durable: [],
+        consumable: [],
+        damaged: []
     };
 
     // Set up inventory tabs click handlers
@@ -986,10 +972,10 @@ function renderInventoryTable(data) {
     // Clear current table content
     tableBody.innerHTML = '';
 
-    // If no data, show message
-    if (data.length === 0) {
+    // If no data or empty array, show message
+    if (!data || data.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `<td colspan="7" style="text-align: center;">لا توجد بيانات متاحة</td>`;
+        emptyRow.innerHTML = `<td colspan="7" style="text-align: center;">لا توجد عناصر في المخزون</td>`;
         tableBody.appendChild(emptyRow);
         return;
     }
